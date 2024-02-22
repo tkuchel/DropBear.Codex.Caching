@@ -8,13 +8,23 @@
 
     <ItemGroup>
       <Folder Include="CachingStrategies\" />
-      <Folder Include="Configuration\" />
       <Folder Include="Core\" />
       <Folder Include="Extensions\" />
-      <Folder Include="Interfaces\" />
       <Folder Include="Models\" />
       <Folder Include="Serialization\" />
       <Folder Include="Utilities\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="EasyCaching.Core" Version="1.9.2" />
+      <PackageReference Include="EasyCaching.Extensions.EasyCompressor" Version="2.0.2" />
+      <PackageReference Include="EasyCaching.FasterKv" Version="1.9.2" />
+      <PackageReference Include="EasyCaching.InMemory" Version="1.9.2" />
+      <PackageReference Include="EasyCaching.Serialization.Json" Version="1.9.2" />
+      <PackageReference Include="EasyCaching.Serialization.MemoryPack" Version="1.9.2" />
+      <PackageReference Include="EasyCaching.Serialization.MessagePack" Version="1.9.2" />
+      <PackageReference Include="EasyCaching.SQLite" Version="1.9.2" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
 
 </Project>
