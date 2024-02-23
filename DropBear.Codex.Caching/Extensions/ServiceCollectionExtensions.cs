@@ -2,6 +2,7 @@ using DropBear.Codex.Caching.Configuration;
 using DropBear.Codex.Caching.Enums;
 using DropBear.Codex.Caching.Factories;
 using DropBear.Codex.Caching.Interfaces;
+using DropBear.Codex.Caching.Services;
 using EasyCaching.Core.Configurations;
 using EasyCaching.Serialization.MemoryPack;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,7 +11,8 @@ namespace DropBear.Codex.Caching.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddCodexCaching(this IServiceCollection services, Action<CachingOptions> configure)
+    public static IServiceCollection AddCodexCaching(this IServiceCollection services, Action<CachingOptions> configure,
+        IEnumerable<ICachePreloader> preloaders = null)
     {
         var options = new CachingOptions();
         configure(options);
@@ -30,7 +32,19 @@ public static class ServiceCollectionExtensions
             ConfigureCompression(easyCachingOptions, options.CompressionOptions);
         });
 
+        // Register the caching service factory for DI
         services.AddSingleton<ICachingServiceFactory, CachingServiceFactory>();
+
+        // Register preloaders if provided
+        if (preloaders != null)
+            foreach (var preloader in preloaders)
+                // This registers each preloader for DI
+                services.AddSingleton(typeof(ICachePreloader), preloader.GetType());
+
+        // Register a hosted service to trigger preloaders after the application starts
+        services.AddHostedService<PreloadingHostedService>();
+
+        // Register the caching options for DI
         services.Configure(configure);
 
         return services;
