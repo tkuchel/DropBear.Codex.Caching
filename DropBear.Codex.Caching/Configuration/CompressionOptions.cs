@@ -1,9 +1,12 @@
+using DropBear.Codex.Caching.Enums;
+
 namespace DropBear.Codex.Caching.Configuration;
 
+/// <summary>
+/// Configuration options for compression.
+/// </summary>
 public class CompressionOptions
 {
-    public bool Enabled { get; set; } = false; // Whether to enable compression
-
-    public string Algorithm { get; set; } = "Gzip"; // Default compression algorithm: "Gzip", "Brotli", etc.
-    // Possible extension point for custom compression settings
+    public bool Enabled { get; set; } = false;
+    public CompressionAlgorithm Algorithm { get; set; } = CompressionAlgorithm.Brotli;
 }

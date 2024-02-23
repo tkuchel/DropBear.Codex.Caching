@@ -7,15 +7,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="CachingStrategies\" />
-      <Folder Include="Core\" />
-      <Folder Include="Extensions\" />
-      <Folder Include="Models\" />
-      <Folder Include="Serialization\" />
-      <Folder Include="Utilities\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="EasyCaching.Core" Version="1.9.2" />
       <PackageReference Include="EasyCaching.Extensions.EasyCompressor" Version="2.0.2" />
       <PackageReference Include="EasyCaching.FasterKv" Version="1.9.2" />
