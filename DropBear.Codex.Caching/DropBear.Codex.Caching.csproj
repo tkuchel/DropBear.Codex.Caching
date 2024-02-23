@@ -27,7 +27,9 @@
       <PackageReference Include="EasyCaching.Serialization.MemoryPack" Version="1.9.2" />
       <PackageReference Include="EasyCaching.Serialization.MessagePack" Version="1.9.2" />
       <PackageReference Include="EasyCaching.SQLite" Version="1.9.2" />
+      <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="8.0.2" />
       <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="8.0.0" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
 
