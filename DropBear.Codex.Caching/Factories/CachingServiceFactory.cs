@@ -1,12 +1,15 @@
 using DropBear.Codex.Caching.CachingStrategies;
 using DropBear.Codex.Caching.Configuration;
 using DropBear.Codex.Caching.Enums;
+using DropBear.Codex.Caching.Extensions;
 using DropBear.Codex.Caching.Interfaces;
-using DropBear.Codex.Caching.Services;
 using EasyCaching.Core;
+using MethodTimer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
 // Needed for GetRequiredService
 
 namespace DropBear.Codex.Caching.Factories;
@@ -45,25 +48,32 @@ public class CachingServiceFactory : ICachingServiceFactory
     ///     and encryption settings.
     /// </returns>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when an unsupported <see cref="CacheType" /> is specified.</exception>
+    [Time]
     public ICacheService GetCachingService(CacheType cacheType)
     {
+        // Dynamically resolve the ILogger<T> instance based on the cache service type
+        var loggerType = typeof(ILogger<>).MakeGenericType(cacheType.GetCacheServiceImplementationType());
+        dynamic logger = _serviceProvider.GetRequiredService(loggerType);
+
+
         ICacheService baseService = cacheType switch
         {
-            CacheType.InMemory => new InMemoryCachingService(_providerFactory, _cacheOptions),
-            CacheType.FasterKV => new FasterKVCachingService(_providerFactory, _cacheOptions),
-            CacheType.SQLite => new SQLiteCachingService(_providerFactory, _cacheOptions),
+            CacheType.InMemory => new InMemoryCachingService(_providerFactory, _cacheOptions, logger),
+            CacheType.FasterKV => new FasterKVCachingService(_providerFactory, _cacheOptions, logger),
+            CacheType.SQLite => new SQLiteCachingService(_providerFactory, _cacheOptions, logger),
             _ => throw new ArgumentOutOfRangeException(nameof(cacheType), $"Unsupported cache type: {cacheType}.")
         };
 
         if (!_cacheOptions.Value.UseEncryption) return baseService;
-        
-        // Retrieve the IDataProtectionProvider from the service provider
+
         var dataProtectionProvider = _serviceProvider.GetRequiredService<IDataProtectionProvider>();
-        
-        // Create a data protector using the application name specified in EncryptionApplicationName
-        var dataProtector = dataProtectionProvider.CreateProtector(_cacheOptions.Value.EncryptionApplicationName);
-        
-        // Wrap the base service with encryption functionality, passing the dataProtector
-        return new EncryptedCacheService(baseService, dataProtector, _cacheOptions);
+        var encryptionAppName = _cacheOptions.Value.EncryptionApplicationName;
+        if (string.IsNullOrWhiteSpace(encryptionAppName))
+            throw new InvalidOperationException("EncryptionApplicationName must be configured for encrypted caching.");
+
+        var dataProtector = dataProtectionProvider.CreateProtector(encryptionAppName);
+
+
+        return new EncryptedCacheService(baseService, dataProtector, _cacheOptions, logger);
     }
 }

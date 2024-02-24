@@ -27,10 +27,13 @@
       <PackageReference Include="EasyCaching.Serialization.MemoryPack" Version="1.9.2" />
       <PackageReference Include="EasyCaching.Serialization.MessagePack" Version="1.9.2" />
       <PackageReference Include="EasyCaching.SQLite" Version="1.9.2" />
+      <PackageReference Include="MethodTimer.Fody" Version="3.2.2" />
       <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="8.0.2" />
       <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
       <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="8.0.0" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+      <PackageReference Include="ZLogger" Version="2.4.1" />
+      <PackageReference Include="ZLogger.MessagePack" Version="2.4.1" />
     </ItemGroup>
 
     <ItemGroup>

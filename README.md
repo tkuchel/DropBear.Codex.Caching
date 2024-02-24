@@ -1,27 +1,34 @@
 # DropBear Codex Caching Library
 
-The DropBear Codex Caching Library is a comprehensive caching solution designed for .NET applications. It supports various caching strategies, including InMemory, SQLite, and FasterKV caches, with advanced features like cache preloading, fallback mechanisms, tag-based invalidation, automatic cache refresh, encrypted cache store, and secure cache access.
+The DropBear Codex Caching Library offers a robust and flexible caching solution tailored for .NET applications. It
+supports diverse caching strategies, such as InMemory, SQLite, and FasterKV caches. Enhanced with features like cache
+preloading, dynamic fallback mechanisms, tag-based invalidation, automatic cache refresh, encrypted cache storage, and
+secure cache access, it aims to optimize performance and ensure data security across .NET applications.
 
 ## Features
 
-- **Multiple Caching Strategies**: Choose from InMemory, SQLite, and FasterKV caching according to your application needs.
-- **Cache Preloading**: Preload frequently accessed data into the cache at application startup to improve performance.
-- **Cache Fallback Mechanism**: Automatically fallback to secondary caches or the primary data store on cache misses or failures.
-- **Tag-based Invalidation**: Invalidate related cache entries together using tags for efficient cache management.
-- **Automatic Cache Refresh**: Refresh cache entries just before they expire to ensure data freshness with minimal latency.
-- **Encrypted Cache Store**: Encrypt cache entries to protect sensitive data.
-- **Secure Cache Access**: Implement access controls to secure cache operations.
+- **Versatile Caching Strategies**: Utilize InMemory, SQLite, and FasterKV caching based on your application's specific
+  requirements.
+- **Cache Preloading**: Elevate performance by preloading critical data into the cache upon application startup.
+- **Dynamic Cache Fallback Mechanism**: Seamlessly fallback to alternative caches or direct data sources in the event of
+  cache misses or operational failures.
+- **Tag-based Invalidation**: Simplify cache management through tag-based invalidation, allowing for coherent cache
+  updates.
+- **Automatic Cache Refresh**: Maintain data freshness by automatically refreshing cache entries just before expiration.
+- **Encrypted Cache Storage**: Secure sensitive information with encrypted cache entries.
+- **Configurable Secure Cache Access**: Enforce access controls for robust cache operation security.
 
 ## Getting Started
 
 ### Prerequisites
 
-- .NET Core 3.1 or .NET 5/6+
-- Microsoft.Extensions.Hosting for integrating with .NET generic host
+- .NET Core 3.1 or .NET 5/6/7+
+- Microsoft.Extensions.Hosting integration for leveraging .NET's generic host capabilities.
 
 ### Installation
 
-To use the DropBear Codex Caching Library in your project, add the library as a dependency via NuGet or reference the project directly.
+Incorporate the DropBear Codex Caching Library into your project by adding it as a NuGet package dependency or by
+directly referencing the project.
 
 ```bash
 dotnet add package DropBear.Codex.Caching
@@ -29,7 +36,8 @@ dotnet add package DropBear.Codex.Caching
 
 ### Configuration
 
-1. **Configure Caching Options**: In your `Startup.cs` or wherever you configure services, add the caching library and configure your preferred caching strategies.
+1. **Set Up Caching Options**: Initialize the caching library within your `Startup.cs` or an equivalent configuration
+   setup, specifying your caching strategy preferences.
 
 ```csharp
 public void ConfigureServices(IServiceCollection services)
@@ -37,21 +45,22 @@ public void ConfigureServices(IServiceCollection services)
     services.AddCodexCaching(options =>
     {
         options.InMemoryOptions.Enabled = true;
-        options.SQLiteOptions.Enabled = false; // Example configuration
-        // Configure other options as needed
-    });
+        options.SQLiteOptions.Enabled = false; // Example setup
+        // Additional configuration as required
+    }, serviceProvider => serviceProvider.GetRequiredService<ILogger<YourServiceClass>>());
 }
 ```
 
-2. **Register and Use Cache Preloaders**: If utilizing cache preloading, define and register preloaders.
+2. **Incorporate Cache Preloaders**: For employing cache preloading, define preloaders and add them during
+   configuration.
 
 ```csharp
-services.AddCodexCaching(options => { /* Configuration */ }, new List<ICachePreloader> { new MyCachePreloader() });
+services.AddCodexCaching(options => { /* Configuration details */ }, preloaders: new List<ICachePreloader> { new MyCachePreloader() });
 ```
 
 ## Usage
 
-Inject `ICacheService` into your services or controllers to interact with the cache.
+Leverage `ICacheService` within your services or controllers to manage cache interactions efficiently.
 
 ```csharp
 public class MyService
@@ -65,24 +74,27 @@ public class MyService
 
     public async Task<MyData> GetDataAsync(string key)
     {
-        return await _cacheService.GetAsync<MyData>(key) ?? FetchDataFromStore(key);
+        return await _cacheService.GetAsync<MyData>(key, () => FetchDataFromStore(key));
     }
 }
 ```
 
 ## Contributing
 
-Contributions are welcome! Please read our contributing guidelines and code of conduct before submitting a pull request or opening an issue.
+We warmly welcome contributions! To maintain a constructive and inclusive community, we ask that you first review our
+contributing guidelines and code of conduct before submitting pull requests or issues.
 
 ## License
 
-This project is licensed under the GNU Lesser Public General License - see the [LICENSE](https://en.wikipedia.org/wiki/GNU_Lesser_General_Public_License) for details.
+This project adheres to the GNU Lesser General Public License. For more details, refer to
+the [LICENSE](https://en.wikipedia.org/wiki/GNU_Lesser_General_Public_License) page.
 
 ## Acknowledgments
 
-- Thanks to the EasyCaching project for providing the core caching infrastructure.
-- Contributors and community members who have provided feedback and suggestions.
+- Special thanks to the EasyCaching project for the foundational caching mechanisms.
+- Appreciation for our contributors and community members for their insightful feedback and suggestions.
 
 ---
 
-**Note**: As this is a relatively new project, certain features are still in development, this package should be considered a beta version and not used in production environments.
+**Disclaimer**: As this project is under active development, features might be subject to change. The current version
+should be considered beta and not yet suited for production use.

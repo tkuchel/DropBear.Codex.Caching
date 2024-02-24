@@ -5,12 +5,16 @@ using DropBear.Codex.Caching.Services;
 using EasyCaching.Core.Configurations;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ZLogger;
+using ZLogger.Providers;
 
 namespace DropBear.Codex.Caching.Extensions;
 
 public static class ServiceCollectionExtensions
 {
+    
     /// <summary>
     ///     Adds CodexCaching services to the IServiceCollection.
     /// </summary>
@@ -23,6 +27,9 @@ public static class ServiceCollectionExtensions
         Action<CachingOptions> configure,
         IEnumerable<ICachePreloader>? preloaders = null)
     {
+        // Conditionally add ZLogger for enhanced logging capabilities.
+        ConfigureZLogger(services);
+        
         // Register and validate CachingOptions.
         services.AddOptions<CachingOptions>()
             .Configure(configure)
@@ -77,7 +84,36 @@ public static class ServiceCollectionExtensions
             .SetApplicationName(options.EncryptionApplicationName)
             .PersistKeysToFileSystem(new DirectoryInfo(keyPath));
     }
+    
+    /// <summary>
+    /// Configures ZLogger logging services.
+    /// </summary>
+    /// <param name="services">The IServiceCollection to add logging services to.</param>
+    private static void ConfigureZLogger(IServiceCollection services)
+    {
+        services.AddLogging(builder =>
+        {
+            builder.ClearProviders()
+                .SetMinimumLevel(LogLevel.Debug)
+                .AddZLoggerConsole(options =>
+                {
+                    options.UseMessagePackFormatter(formatter =>
+                    {
+                        formatter.IncludeProperties = IncludeProperties.ParameterKeyValues;
+                    });
+                })
+                .AddZLoggerRollingFile(options =>
+                {
+                    options.FilePathSelector = (timestamp, sequenceNumber) =>
+                        $"logs/{timestamp.ToLocalTime():yyyy-MM-dd}_{sequenceNumber:000}.log";
+                    options.RollingInterval = RollingInterval.Day;
+                    options.RollingSizeKB = 1024; // 1MB
+                });
+        });
+    }
 }
+
+
 
 /// <summary>
 ///     Validates CachingOptions with custom logic.
