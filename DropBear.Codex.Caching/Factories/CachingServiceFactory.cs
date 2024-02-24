@@ -64,10 +64,10 @@ public class CachingServiceFactory : ICachingServiceFactory
             _ => throw new ArgumentOutOfRangeException(nameof(cacheType), $"Unsupported cache type: {cacheType}.")
         };
 
-        if (!_cacheOptions.Value.UseEncryption) return baseService;
+        if (!_cacheOptions.Value.EncryptionOptions.Enabled) return baseService;
 
         var dataProtectionProvider = _serviceProvider.GetRequiredService<IDataProtectionProvider>();
-        var encryptionAppName = _cacheOptions.Value.EncryptionApplicationName;
+        var encryptionAppName = _cacheOptions.Value.EncryptionOptions.EncryptionApplicationName;
         if (string.IsNullOrWhiteSpace(encryptionAppName))
             throw new InvalidOperationException("EncryptionApplicationName must be configured for encrypted caching.");
 

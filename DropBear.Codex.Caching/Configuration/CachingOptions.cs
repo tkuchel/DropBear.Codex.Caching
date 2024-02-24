@@ -6,23 +6,6 @@ namespace DropBear.Codex.Caching.Configuration;
 public class CachingOptions
 {
     /// <summary>
-    ///     Gets or sets a value indicating whether encryption is used for cache entries.
-    /// </summary>
-    public bool UseEncryption { get; set; } = false;
-
-    /// <summary>
-    ///     Gets or sets the application name used for scoping the data protection purposes in encryption.
-    ///     This helps isolate encryption keys from other applications on the same host.
-    /// </summary>
-    public string? EncryptionApplicationName { get; set; }
-
-    /// <summary>
-    ///     Gets or sets the path to the key storage location for encryption.
-    ///     This is used to store the encryption keys.
-    /// </summary>
-    public string? KeyStoragePath { get; set; }
-
-    /// <summary>
     ///     Gets the default cache duration in minutes.
     /// </summary>
     public TimeSpan DefaultCacheDurationMinutes { get; } = TimeSpan.FromMinutes(30);
@@ -51,4 +34,9 @@ public class CachingOptions
     ///     Gets or sets the options for compression in caching.
     /// </summary>
     public CompressionOptions CompressionOptions { get; set; } = new();
+    
+    /// <summary>
+    ///     Gets or sets the options for encryption in caching.
+    /// </summary>
+    public EncryptionOptions EncryptionOptions { get; set; } = new();
 }

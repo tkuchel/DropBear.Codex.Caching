@@ -39,11 +39,11 @@ public class EncryptedCacheService : ICacheService
         IOptions<CachingOptions> options,
         ILogger<EncryptedCacheService> logger)
     {
-        if (options == null || string.IsNullOrEmpty(options.Value.EncryptionApplicationName))
+        if (options == null || string.IsNullOrEmpty(options.Value.EncryptionOptions.EncryptionApplicationName))
             throw new ArgumentException("Encryption options must specify an ApplicationName.");
 
         _baseCacheService = baseCacheService ?? throw new ArgumentNullException(nameof(baseCacheService));
-        _dataProtector = dataProtectionProvider.CreateProtector(options.Value.EncryptionApplicationName);
+        _dataProtector = dataProtectionProvider.CreateProtector(options.Value.EncryptionOptions.EncryptionApplicationName);
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _logger.ZLogInformation($"EncryptedCacheService initialized.");
     }

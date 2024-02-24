@@ -15,7 +15,6 @@ namespace DropBear.Codex.Caching.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    
     /// <summary>
     ///     Adds CodexCaching services to the IServiceCollection.
     /// </summary>
@@ -30,7 +29,7 @@ public static class ServiceCollectionExtensions
     {
         // Conditionally add ZLogger for enhanced logging capabilities.
         ConfigureZLogger(services);
-        
+
         // Register and validate CachingOptions.
         services.AddOptions<CachingOptions>()
             .Configure(configure)
@@ -40,7 +39,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IValidateOptions<CachingOptions>, ValidateCachingOptions>();
         services.PostConfigure<CachingOptions>(options =>
         {
-            if (options.UseEncryption) ValidateAndSetupDataProtection(services, options);
+            if (options.EncryptionOptions.Enabled) ValidateAndSetupDataProtection(services, options);
         });
 
         // Configure EasyCaching with options including serialization and compression.
@@ -51,7 +50,7 @@ public static class ServiceCollectionExtensions
         });
 
         // Register the caching service factory for DI.
-        services.AddSingleton<IEasyCachingProviderFactory, DefaultEasyCachingProviderFactory>(); 
+        services.AddSingleton<IEasyCachingProviderFactory, DefaultEasyCachingProviderFactory>();
         services.AddSingleton<ICachingServiceFactory, CachingServiceFactory>();
 
         // Register preloaders if provided.
@@ -74,21 +73,21 @@ public static class ServiceCollectionExtensions
 
     private static void ValidateAndSetupDataProtection(IServiceCollection services, CachingOptions options)
     {
-        if (string.IsNullOrEmpty(options.EncryptionApplicationName))
+        if (string.IsNullOrEmpty(options.EncryptionOptions.EncryptionApplicationName))
             throw new ArgumentException("EncryptionApplicationName is required when UseEncryption is enabled.");
 
-        var keyPath = options.KeyStoragePath ?? Path.Combine(
+        var keyPath = options.EncryptionOptions.KeyStoragePath ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            options.EncryptionApplicationName,
+            options.EncryptionOptions.EncryptionApplicationName,
             "DataProtectionKeys");
 
         services.AddDataProtection()
-            .SetApplicationName(options.EncryptionApplicationName)
+            .SetApplicationName(options.EncryptionOptions.EncryptionApplicationName)
             .PersistKeysToFileSystem(new DirectoryInfo(keyPath));
     }
-    
+
     /// <summary>
-    /// Configures ZLogger logging services.
+    ///     Configures ZLogger logging services.
     /// </summary>
     /// <param name="services">The IServiceCollection to add logging services to.</param>
     private static void ConfigureZLogger(IServiceCollection services)
@@ -115,19 +114,19 @@ public static class ServiceCollectionExtensions
     }
 }
 
-
-
 /// <summary>
 ///     Validates CachingOptions with custom logic.
 /// </summary>
 internal class ValidateCachingOptions : IValidateOptions<CachingOptions>
 {
-    public ValidateOptionsResult Validate(string name, CachingOptions options)
+    public ValidateOptionsResult Validate(string? name, CachingOptions options)
     {
         var failures = new List<string>();
 
-        if (options.UseEncryption && string.IsNullOrWhiteSpace(options.EncryptionApplicationName))
-            failures.Add($"{nameof(options.EncryptionApplicationName)} is required when encryption is enabled.");
+        if (options.EncryptionOptions.Enabled &&
+            string.IsNullOrWhiteSpace(options.EncryptionOptions.EncryptionApplicationName))
+            failures.Add(
+                $"{nameof(options.EncryptionOptions.EncryptionApplicationName)} is required when encryption is enabled.");
 
         // Additional validation logic as necessary...
 
