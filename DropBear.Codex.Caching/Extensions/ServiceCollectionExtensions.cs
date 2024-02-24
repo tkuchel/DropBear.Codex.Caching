@@ -2,6 +2,7 @@ using DropBear.Codex.Caching.Configuration;
 using DropBear.Codex.Caching.Factories;
 using DropBear.Codex.Caching.Interfaces;
 using DropBear.Codex.Caching.Services;
+using EasyCaching.Core;
 using EasyCaching.Core.Configurations;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,6 +51,7 @@ public static class ServiceCollectionExtensions
         });
 
         // Register the caching service factory for DI.
+        services.AddSingleton<IEasyCachingProviderFactory, DefaultEasyCachingProviderFactory>(); 
         services.AddSingleton<ICachingServiceFactory, CachingServiceFactory>();
 
         // Register preloaders if provided.
