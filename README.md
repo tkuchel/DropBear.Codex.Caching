@@ -12,11 +12,7 @@ secure cache access, it aims to optimize performance and ensure data security ac
 - **Cache Preloading**: Elevate performance by preloading critical data into the cache upon application startup.
 - **Dynamic Cache Fallback Mechanism**: Seamlessly fallback to alternative caches or direct data sources in the event of
   cache misses or operational failures.
-- **Tag-based Invalidation**: Simplify cache management through tag-based invalidation, allowing for coherent cache
-  updates.
-- **Automatic Cache Refresh**: Maintain data freshness by automatically refreshing cache entries just before expiration.
 - **Encrypted Cache Storage**: Secure sensitive information with encrypted cache entries.
-- **Configurable Secure Cache Access**: Enforce access controls for robust cache operation security.
 
 ## Getting Started
 
