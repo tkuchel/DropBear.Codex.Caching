@@ -7,22 +7,33 @@ using EasyCaching.Serialization.MemoryPack;
 using MethodTimer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ZLogger;
 
 namespace DropBear.Codex.Caching.Services;
 
+/// <summary>
+///     Provides services for configuring EasyCaching based on application-defined options.
+/// </summary>
 public class CachingConfigurationService : ICachingConfigurationService
 {
     private readonly ILogger<CachingConfigurationService> _logger;
     private readonly CachingOptions _options;
 
-    public CachingConfigurationService(IOptions<CachingOptions> options, ILogger<CachingConfigurationService> logger)
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="CachingConfigurationService" /> class.
+    /// </summary>
+    /// <param name="options">The caching configuration options.</param>
+    /// <param name="logger">The logger for logging information and errors.</param>
+    public CachingConfigurationService(CachingOptions options, ILogger<CachingConfigurationService>? logger)
     {
-        _options = options.Value;
-        _logger = logger;
+        _options = options ?? throw new ArgumentNullException(nameof(options));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>
+    ///     Configures EasyCaching options based on the provided <see cref="CachingOptions" />.
+    /// </summary>
+    /// <param name="easyCachingOptions">The EasyCaching options to configure.</param>
     [Time]
     public void ConfigureEasyCaching(EasyCachingOptions easyCachingOptions)
     {
@@ -32,7 +43,8 @@ public class CachingConfigurationService : ICachingConfigurationService
                 easyCachingOptions.UseInMemory(inMemoryConfig =>
                 {
                     // Directly configure InMemoryOptions using _options.InMemoryOptions
-                    inMemoryConfig.DBConfig.ExpirationScanFrequency = _options.InMemoryOptions.ExpirationScanFrequency;
+                    inMemoryConfig.DBConfig.ExpirationScanFrequency =
+                        _options.InMemoryOptions.ExpirationScanFrequency;
                     inMemoryConfig.DBConfig.SizeLimit = _options.InMemoryOptions.SizeLimit;
                 }, _options.InMemoryOptions.CacheName);
 
@@ -60,10 +72,11 @@ public class CachingConfigurationService : ICachingConfigurationService
         }
         catch (Exception ex)
         {
-            _logger.ZLogError(ex, $"Error configuring caching services.");
+            _logger.LogError(ex, "Error configuring caching services.");
             throw new ConfigurationException("Error configuring caching services.", ex);
         }
     }
+
 
     [Time]
     private void ConfigureSerialization(EasyCachingOptions options, SerializationOptions serializationOptions)

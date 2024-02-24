@@ -8,7 +8,7 @@ public class CachingOptions
     /// <summary>
     ///     Gets the default cache duration in minutes.
     /// </summary>
-    public TimeSpan DefaultCacheDurationMinutes { get; } = TimeSpan.FromMinutes(30);
+    public TimeSpan DefaultCacheDurationMinutes { get; set; } = TimeSpan.FromMinutes(30);
 
     /// <summary>
     ///     Gets or sets the configuration options for in-memory caching.

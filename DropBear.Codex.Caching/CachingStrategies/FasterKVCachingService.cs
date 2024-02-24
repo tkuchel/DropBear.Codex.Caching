@@ -3,7 +3,6 @@ using DropBear.Codex.Caching.Interfaces;
 using EasyCaching.Core;
 using MethodTimer;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ZLogger;
 
 namespace DropBear.Codex.Caching.CachingStrategies;
@@ -18,18 +17,18 @@ public class FasterKVCachingService : ICacheService, IDisposable
     private readonly ILogger<FasterKVCachingService> _logger;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="FasterKVCachingService" /> class.
+    ///     Initializes a new instance of the FasterKVCachingService class.
     /// </summary>
     /// <param name="factory">The EasyCaching provider factory.</param>
-    /// <param name="cachingOptions">The options for configuring caching services.</param>
+    /// <param name="cachingOptions">The caching configuration options.</param>
     /// <param name="logger">The logger for capturing logs.</param>
-    public FasterKVCachingService(IEasyCachingProviderFactory factory, IOptions<CachingOptions> cachingOptions,
+    public FasterKVCachingService(IEasyCachingProviderFactory factory, CachingOptions cachingOptions,
         ILogger<FasterKVCachingService> logger)
     {
-        _cacheOptions = cachingOptions.Value;
+        _cacheOptions = cachingOptions ?? throw new ArgumentNullException(nameof(cachingOptions));
         _cache = factory.GetCachingProvider(_cacheOptions.FasterKVOptions.CacheName);
-        _logger = logger;
-        _logger.ZLogInformation($"FasterKVCachingService initialized.");
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger.LogInformation("FasterKVCachingService initialized.");
     }
 
     /// <summary>

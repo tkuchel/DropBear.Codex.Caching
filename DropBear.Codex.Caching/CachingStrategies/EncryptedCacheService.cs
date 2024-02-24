@@ -4,7 +4,6 @@ using DropBear.Codex.Caching.Interfaces;
 using MethodTimer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ZLogger;
 
 namespace DropBear.Codex.Caching.CachingStrategies;
@@ -36,18 +35,17 @@ public class EncryptedCacheService : ICacheService
     public EncryptedCacheService(
         ICacheService baseCacheService,
         IDataProtectionProvider dataProtectionProvider,
-        IOptions<CachingOptions> options,
+        CachingOptions options,
         ILogger<EncryptedCacheService> logger)
     {
-        if (options == null || string.IsNullOrEmpty(options.Value.EncryptionOptions.EncryptionApplicationName))
+        if (options == null || string.IsNullOrEmpty(options.EncryptionOptions.EncryptionApplicationName))
             throw new ArgumentException("Encryption options must specify an ApplicationName.");
 
         _baseCacheService = baseCacheService ?? throw new ArgumentNullException(nameof(baseCacheService));
-        _dataProtector = dataProtectionProvider.CreateProtector(options.Value.EncryptionOptions.EncryptionApplicationName);
+        _dataProtector = dataProtectionProvider.CreateProtector(options.EncryptionOptions.EncryptionApplicationName);
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _logger.ZLogInformation($"EncryptedCacheService initialized.");
+        _logger.LogInformation("EncryptedCacheService initialized.");
     }
-
 
     /// <summary>
     ///     Asynchronously adds an item to the cache with optional expiration.

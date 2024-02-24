@@ -3,7 +3,6 @@ using DropBear.Codex.Caching.Interfaces;
 using EasyCaching.Core;
 using MethodTimer;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ZLogger;
 
 namespace DropBear.Codex.Caching.CachingStrategies;
@@ -23,14 +22,14 @@ public class InMemoryCachingService : ICacheService, IDisposable
     /// <param name="factory">The EasyCaching provider factory.</param>
     /// <param name="cachingOptions">The caching configuration options.</param>
     /// <param name="logger">The logger instance for logging operations and errors.</param>
-    public InMemoryCachingService(IEasyCachingProviderFactory factory, IOptions<CachingOptions> cachingOptions,
+    public InMemoryCachingService(IEasyCachingProviderFactory factory, CachingOptions cachingOptions,
         ILogger<InMemoryCachingService> logger)
     {
-        _cacheOptions = cachingOptions.Value ?? throw new ArgumentNullException(nameof(cachingOptions));
-        _cache = factory?.GetCachingProvider(_cacheOptions.InMemoryOptions.CacheName) ??
+        _cache = factory?.GetCachingProvider(cachingOptions.InMemoryOptions.CacheName) ??
                  throw new ArgumentNullException(nameof(factory));
+        _cacheOptions = cachingOptions ?? throw new ArgumentNullException(nameof(cachingOptions));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _logger.ZLogInformation($"InMemoryCachingService initialized.");
+        _logger.LogInformation("InMemoryCachingService initialized.");
     }
 
     /// <summary>

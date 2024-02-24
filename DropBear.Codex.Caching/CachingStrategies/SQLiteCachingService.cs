@@ -3,7 +3,6 @@ using DropBear.Codex.Caching.Interfaces;
 using EasyCaching.Core;
 using MethodTimer;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ZLogger;
 
 namespace DropBear.Codex.Caching.CachingStrategies;
@@ -18,17 +17,19 @@ public class SQLiteCachingService : ICacheService, IDisposable
     private readonly ILogger<SQLiteCachingService> _logger;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="SQLiteCachingService" /> class.
+    ///     Initializes a new instance of the SQLiteCachingService class.
     /// </summary>
     /// <param name="factory">The EasyCaching provider factory.</param>
-    /// <param name="cachingOptions">The options for configuring caching services.</param>
+    /// <param name="cachingOptions">The caching configuration options.</param>
     /// <param name="logger">The logger for capturing logs within the service.</param>
-    public SQLiteCachingService(IEasyCachingProviderFactory factory, IOptions<CachingOptions> cachingOptions,
+    public SQLiteCachingService(IEasyCachingProviderFactory factory, CachingOptions cachingOptions,
         ILogger<SQLiteCachingService> logger)
     {
-        _cacheOptions = cachingOptions.Value;
-        _cache = factory.GetCachingProvider(_cacheOptions.SQLiteOptions.CacheName);
-        _logger = logger;
+        _cacheOptions = cachingOptions ?? throw new ArgumentNullException(nameof(cachingOptions));
+        _cache = factory.GetCachingProvider(_cacheOptions.SQLiteOptions.CacheName) ??
+                 throw new ArgumentNullException(nameof(factory));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _logger.LogInformation("SQLiteCachingService initialized.");
     }
 
     /// <summary>

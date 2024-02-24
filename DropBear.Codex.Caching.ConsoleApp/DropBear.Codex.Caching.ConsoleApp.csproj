@@ -11,4 +11,15 @@
       <ProjectReference Include="..\DropBear.Codex.Caching\DropBear.Codex.Caching.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="appsettings.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="ZLogger" Version="2.4.1" />
+      <PackageReference Include="ZLogger.MessagePack" Version="2.4.1" />
+    </ItemGroup>
+
 </Project>

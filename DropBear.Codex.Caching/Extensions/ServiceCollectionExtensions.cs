@@ -3,8 +3,8 @@ using DropBear.Codex.Caching.Factories;
 using DropBear.Codex.Caching.Interfaces;
 using DropBear.Codex.Caching.Services;
 using EasyCaching.Core;
-using EasyCaching.Core.Configurations;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -24,52 +24,53 @@ public static class ServiceCollectionExtensions
     /// <returns>The IServiceCollection for chaining.</returns>
     public static IServiceCollection AddCodexCaching(
         this IServiceCollection services,
-        Action<CachingOptions> configure,
+        IConfiguration configuration,
+        Action<CachingOptions> configure = null,
         IEnumerable<ICachePreloader>? preloaders = null)
     {
-        // Conditionally add ZLogger for enhanced logging capabilities.
+        // Configure ZLogger for enhanced logging capabilities
         ConfigureZLogger(services);
 
-        // Register and validate CachingOptions.
-        services.AddOptions<CachingOptions>()
-            .Configure(configure)
-            .ValidateDataAnnotations();
+        var logger = services.BuildServiceProvider().GetService<ILogger<ConfigurationLoader>>();
+        var configurationLoader = new ConfigurationLoader(logger);
 
-        // Post-configuration for Data Protection based on options.
-        services.AddSingleton<IValidateOptions<CachingOptions>, ValidateCachingOptions>();
-        services.PostConfigure<CachingOptions>(options =>
-        {
-            if (options.EncryptionOptions.Enabled) ValidateAndSetupDataProtection(services, options);
-        });
+        // Load or configure CachingOptions
+        var cachingOptions = configure == null
+            ? configurationLoader.LoadCachingOptions(configuration)
+            : configurationLoader.ConfigureCachingOptions(configure);
 
-        // Configure EasyCaching with options including serialization and compression.
-        // Defer the actual configuration to a later stage to avoid direct ServiceProvider creation.
+        // Validate and setup data protection if encryption is enabled
+        if (cachingOptions.EncryptionOptions.Enabled) ValidateAndSetupDataProtection(services, cachingOptions);
+
+        // Configure EasyCaching based on CachingOptions
         services.AddEasyCaching(options =>
         {
-            /* Configuration moved to PostConfigureAll */
+            var logger = services.BuildServiceProvider().GetService<ILogger<CachingConfigurationService>>();
+            var cachingConfigurationService = new CachingConfigurationService(cachingOptions, logger);
+            cachingConfigurationService.ConfigureEasyCaching(options);
         });
 
-        // Register the caching service factory for DI.
+        // Register IEasyCachingProviderFactory
         services.AddSingleton<IEasyCachingProviderFactory, DefaultEasyCachingProviderFactory>();
-        services.AddSingleton<ICachingServiceFactory, CachingServiceFactory>();
 
-        // Register preloaders if provided.
+        // Assuming cachingOptions is already instantiated with your configuration loader
+        services.AddSingleton<ICachingServiceFactory>(provider =>
+            new CachingServiceFactory(
+                provider.GetRequiredService<IEasyCachingProviderFactory>(),
+                cachingOptions, // Direct instance of CachingOptions
+                provider));
+
+        // Register preloaders if provided
         if (preloaders != null)
             foreach (var preloader in preloaders)
                 services.AddSingleton(typeof(ICachePreloader), preloader);
 
-        // Register a hosted service to trigger preloaders after the application starts.
+        // Register a hosted service to trigger preloaders after the application starts
         services.AddHostedService<PreloadingHostedService>();
-
-        // Register the CachingConfigurationService
-        services.AddSingleton<ICachingConfigurationService, CachingConfigurationService>();
-
-        // Register a post-configuration action for EasyCachingOptions
-        // that depends on ICachingConfigurationService
-        services.AddTransient<IConfigureOptions<EasyCachingOptions>, ConfigureEasyCachingOptions>();
 
         return services;
     }
+
 
     private static void ValidateAndSetupDataProtection(IServiceCollection services, CachingOptions options)
     {
