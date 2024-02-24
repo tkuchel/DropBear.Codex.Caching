@@ -32,16 +32,8 @@ public class CachingConfigurationService : ICachingConfigurationService
                 easyCachingOptions.UseInMemory(inMemoryConfig =>
                 {
                     // Directly configure InMemoryOptions using _options.InMemoryOptions
-                    inMemoryConfig.EnableLogging = _options.InMemoryOptions.EnableLogging;
                     inMemoryConfig.DBConfig.ExpirationScanFrequency = _options.InMemoryOptions.ExpirationScanFrequency;
                     inMemoryConfig.DBConfig.SizeLimit = _options.InMemoryOptions.SizeLimit;
-                    inMemoryConfig.DBConfig.EnableReadDeepClone = _options.InMemoryOptions.EnableReadDeepClone;
-                    inMemoryConfig.DBConfig.EnableWriteDeepClone = _options.InMemoryOptions.EnableWriteDeepClone;
-                    // Assuming MaxRdSecond, EnableLogging, LockMs, and SleepMs are directly inMemoryConfigurable
-                    inMemoryConfig.MaxRdSecond = _options.InMemoryOptions.MaxRdSecond;
-                    inMemoryConfig.EnableLogging = _options.InMemoryOptions.EnableLogging;
-                    inMemoryConfig.LockMs = _options.InMemoryOptions.LockMs;
-                    inMemoryConfig.SleepMs = _options.InMemoryOptions.SleepMs;
                 }, _options.InMemoryOptions.CacheName);
 
             if (_options.SQLiteOptions.Enabled)
@@ -50,23 +42,12 @@ public class CachingConfigurationService : ICachingConfigurationService
                     // Directly configure SQLiteOptions using _options.SQLiteOptions
                     sqliteConfig.DBConfig.FilePath = _options.SQLiteOptions.FilePath;
                     sqliteConfig.DBConfig.FileName = _options.SQLiteOptions.FileName;
-                    sqliteConfig.DBConfig.OpenMode = _options.SQLiteOptions.OpenMode;
-                    sqliteConfig.DBConfig.CacheMode = _options.SQLiteOptions.CacheMode;
                 }, _options.SQLiteOptions.CacheName);
 
             if (_options.FasterKVOptions.Enabled)
                 easyCachingOptions.UseFasterKv(fasterKVConfig =>
                 {
                     // Directly configure FasterKvCachingOptions using _options.FasterKVOptions
-                    fasterKVConfig.IndexCount = _options.FasterKVOptions.IndexCount;
-                    fasterKVConfig.IndexCount = _options.FasterKVOptions.IndexCount;
-                    fasterKVConfig.MemorySizeBit = _options.FasterKVOptions.MemorySizeBit;
-                    fasterKVConfig.PageSizeBit = _options.FasterKVOptions.PageSizeBit;
-                    fasterKVConfig.ReadCacheMemorySizeBit = _options.FasterKVOptions.ReadCacheMemorySizeBit;
-                    fasterKVConfig.ReadCachePageSizeBit = _options.FasterKVOptions.ReadCachePageSizeBit;
-                    fasterKVConfig.LogPath = _options.FasterKVOptions.LogPath;
-                    // Assuming CustomStore is correctly typed and assignable
-                    fasterKVConfig.CustomStore = _options.FasterKVOptions.CustomStore;
                 }, _options.FasterKVOptions.CacheName);
 
             // Implement other caching configurations (SQLite, FasterKV) as needed...

@@ -11,6 +11,5 @@ public class SQLiteOptions
     public bool Enabled { get; set; } = false;
     public string FilePath { get; set; } = Directory.GetCurrentDirectory();
     public string FileName { get; set; } = "cache.db";
-    public SqliteOpenMode OpenMode { get; set; }
-    public SqliteCacheMode CacheMode { get; set; }
+
 }
