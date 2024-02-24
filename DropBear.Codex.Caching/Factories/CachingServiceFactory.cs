@@ -4,6 +4,7 @@ using DropBear.Codex.Caching.Enums;
 using DropBear.Codex.Caching.Extensions;
 using DropBear.Codex.Caching.Interfaces;
 using EasyCaching.Core;
+using EasyCaching.Core.Configurations;
 using MethodTimer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,6 +55,9 @@ public class CachingServiceFactory : ICachingServiceFactory
         // Dynamically resolve the ILogger<T> instance based on the cache service type
         var loggerType = typeof(ILogger<>).MakeGenericType(cacheType.GetCacheServiceImplementationType());
         dynamic logger = _serviceProvider.GetRequiredService(loggerType);
+        
+        // Explicit Configuration Trigger
+        var easyCachingOptions = _serviceProvider.GetService<IOptions<EasyCachingOptions>>();
 
 
         ICacheService baseService = cacheType switch
