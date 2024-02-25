@@ -132,12 +132,18 @@ internal class ValidateCachingOptions : IValidateOptions<CachingOptions>
     {
         var failures = new List<string>();
 
+        // Validate encryption options
         if (options.EncryptionOptions.Enabled &&
             string.IsNullOrWhiteSpace(options.EncryptionOptions.EncryptionApplicationName))
             failures.Add(
                 $"{nameof(options.EncryptionOptions.EncryptionApplicationName)} is required when encryption is enabled.");
 
-        // Additional validation logic as necessary...
+        // Validate default cache duration
+        if (options.DefaultCacheDurationMinutes >= TimeSpan.Zero)
+        {
+            failures.Add(
+                $"{nameof(options.DefaultCacheDurationMinutes)} must be a positive timespan.");
+        }
 
         return failures.Any() ? ValidateOptionsResult.Fail(failures) : ValidateOptionsResult.Success;
     }
