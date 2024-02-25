@@ -4,6 +4,7 @@ using DropBear.Codex.Caching.Exceptions;
 using DropBear.Codex.Caching.Interfaces;
 using EasyCaching.Core.Configurations;
 using EasyCaching.Serialization.MemoryPack;
+using MemoryPack;
 using MethodTimer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -37,6 +38,14 @@ public class CachingConfigurationService : ICachingConfigurationService
     [Time]
     public void ConfigureEasyCaching(EasyCachingOptions easyCachingOptions)
     {
+        var serName = _options.SerializationOptions.Format switch
+        {
+            SerializationFormat.MessagePack => Constants.MessagePackSerializerName,
+            SerializationFormat.Json => Constants.JsonSerializerName,
+            _ => throw new ArgumentOutOfRangeException(nameof(_options.SerializationOptions.Format),
+                $"Unsupported serialization format: {_options.SerializationOptions.Format}.")
+        };
+
         try
         {
             if (_options.InMemoryOptions.Enabled)
@@ -46,6 +55,7 @@ public class CachingConfigurationService : ICachingConfigurationService
                     inMemoryConfig.DBConfig.ExpirationScanFrequency =
                         _options.InMemoryOptions.ExpirationScanFrequency;
                     inMemoryConfig.DBConfig.SizeLimit = _options.InMemoryOptions.SizeLimit;
+                    inMemoryConfig.SerializerName = serName;
                 }, _options.InMemoryOptions.CacheName);
 
             if (_options.SQLiteOptions.Enabled)
@@ -54,13 +64,12 @@ public class CachingConfigurationService : ICachingConfigurationService
                     // Directly configure SQLiteOptions using _options.SQLiteOptions
                     sqliteConfig.DBConfig.FilePath = _options.SQLiteOptions.FilePath;
                     sqliteConfig.DBConfig.FileName = _options.SQLiteOptions.FileName;
+                    sqliteConfig.SerializerName = serName;
                 }, _options.SQLiteOptions.CacheName);
 
             if (_options.FasterKVOptions.Enabled)
-                easyCachingOptions.UseFasterKv(fasterKVConfig =>
-                {
-                    // Directly configure FasterKvCachingOptions using _options.FasterKVOptions
-                }, _options.FasterKVOptions.CacheName);
+                easyCachingOptions.UseFasterKv(fasterKVConfig => { fasterKVConfig.SerializerName = serName; },
+                    _options.FasterKVOptions.CacheName);
 
             // Implement other caching configurations (SQLite, FasterKV) as needed...
 
@@ -83,22 +92,25 @@ public class CachingConfigurationService : ICachingConfigurationService
     {
         try
         {
-            if (!serializationOptions.Enabled) return;
+            if (!serializationOptions.Enabled)
+            {
+                // Serialization is now a requirement, so throw an error if it's disabled or fallback to a safe, versatile serializer.
+                // This defaults to JSON for testing purposes.
+                options.WithJson(Constants.JsonSerializerName);
+                _logger.ZLogWarning($"Serialization is disabled. Defaulting to JSON serialization.");
+                return;
+            }
 
             switch (serializationOptions.Format)
             {
                 case SerializationFormat.MessagePack:
-                    options.WithMessagePack(); // Apply MessagePack serialization globally
-                    break;
-                case SerializationFormat.MemoryPack:
-                    options.WithMemoryPack(); // Apply MemoryPack serialization globally
+                    options.WithMessagePack(Constants
+                        .MessagePackSerializerName); // Apply MessagePack serialization globally
                     break;
                 case SerializationFormat.Json:
-                    options.WithJson(); // Apply JSON serialization globally
+                    options.WithJson(Constants.JsonSerializerName); // Apply JSON serialization globally
                     break;
-                case SerializationFormat.None:
-                    // No serialization configuration applied
-                    break;
+                // Removed the case for SerializationFormat.None
                 default:
                     throw new ArgumentOutOfRangeException(nameof(serializationOptions.Format),
                         $"Unsupported serialization format: {serializationOptions.Format}.");
@@ -111,6 +123,7 @@ public class CachingConfigurationService : ICachingConfigurationService
         }
     }
 
+
     [Time]
     private void ConfigureCompression(EasyCachingOptions options, CompressionOptions compressionOptions)
     {
@@ -121,10 +134,10 @@ public class CachingConfigurationService : ICachingConfigurationService
             switch (compressionOptions.Algorithm)
             {
                 case CompressionAlgorithm.Brotli:
-                    options.WithCompressor("brotli"); // Globally apply Brotli compression
+                    options.WithCompressor(Constants.BrotliCompressionName); // Globally apply Brotli compression
                     break;
                 case CompressionAlgorithm.LZ4:
-                    options.WithCompressor("lz4"); // Globally apply LZ4 compression
+                    options.WithCompressor(Constants.LZ4CompressionName); // Globally apply LZ4 compression
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(compressionOptions.Algorithm),

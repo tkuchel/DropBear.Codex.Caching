@@ -53,6 +53,14 @@ public static class ServiceCollectionExtensions
         // Register IEasyCachingProviderFactory
         services.AddSingleton<IEasyCachingProviderFactory, DefaultEasyCachingProviderFactory>();
 
+        // Register Compressors
+        services.AddLZ4Compressor(Constants.LZ4CompressionName); // Add LZ4 compressor
+        services.AddBrotliCompressor(Constants.BrotliCompressionName); // Add Brotli compressor
+        //TODO: Add other compressors in the future
+        
+        // Register MemoryPack
+        
+        
         // Assuming cachingOptions is already instantiated with your configuration loader
         services.AddSingleton<ICachingServiceFactory>(provider =>
             new CachingServiceFactory(

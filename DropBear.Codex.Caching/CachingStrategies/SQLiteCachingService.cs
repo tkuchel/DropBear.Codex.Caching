@@ -23,7 +23,7 @@ public class SQLiteCachingService : ICacheService, IDisposable
     /// <param name="cachingOptions">The caching configuration options.</param>
     /// <param name="logger">The logger for capturing logs within the service.</param>
     public SQLiteCachingService(IEasyCachingProviderFactory factory, CachingOptions cachingOptions,
-        ILogger<SQLiteCachingService> logger)
+        ILogger<SQLiteCachingService>? logger)
     {
         _cacheOptions = cachingOptions ?? throw new ArgumentNullException(nameof(cachingOptions));
         _cache = factory.GetCachingProvider(_cacheOptions.SQLiteOptions.CacheName) ??

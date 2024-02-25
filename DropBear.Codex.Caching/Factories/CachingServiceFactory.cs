@@ -1,7 +1,6 @@
 using DropBear.Codex.Caching.CachingStrategies;
 using DropBear.Codex.Caching.Configuration;
 using DropBear.Codex.Caching.Enums;
-using DropBear.Codex.Caching.Extensions;
 using DropBear.Codex.Caching.Interfaces;
 using EasyCaching.Core;
 using Microsoft.AspNetCore.DataProtection;
@@ -48,30 +47,32 @@ public class CachingServiceFactory : ICachingServiceFactory
     /// <exception cref="ArgumentOutOfRangeException">Thrown when an unsupported <see cref="CacheType" /> is specified.</exception>
     public ICacheService GetCachingService(CacheType cacheType)
     {
-        // Use a generic method to create the logger for the specific cache service type
-        var loggerMethod = typeof(ServiceProviderServiceExtensions).GetMethod(
-                nameof(ServiceProviderServiceExtensions.GetRequiredService), new[] { typeof(IServiceProvider) })
-            ?.MakeGenericMethod(typeof(ILogger<>).MakeGenericType(cacheType.GetCacheServiceImplementationType()));
-        dynamic logger = loggerMethod?.Invoke(null, new object[] { _serviceProvider }) ??
-                         throw new InvalidOperationException();
+        var loggerFactory = _serviceProvider.GetRequiredService<ILoggerFactory>();
+
+        // Correctly create generic loggers for each caching service type
+        var inmemoryLogger = loggerFactory.CreateLogger<InMemoryCachingService>();
+        var fasterKVLogger = loggerFactory.CreateLogger<FasterKVCachingService>();
+        var sqliteLogger = loggerFactory.CreateLogger<SQLiteCachingService>();
+
 
         ICacheService baseService = cacheType switch
         {
-            CacheType.InMemory => new InMemoryCachingService(_providerFactory, _cachingOptions, logger),
-            CacheType.FasterKV => new FasterKVCachingService(_providerFactory, _cachingOptions, logger),
-            CacheType.SQLite => new SQLiteCachingService(_providerFactory, _cachingOptions, logger),
+            CacheType.InMemory => new InMemoryCachingService(_providerFactory, _cachingOptions,
+                inmemoryLogger),
+            CacheType.FasterKV => new FasterKVCachingService(_providerFactory, _cachingOptions,
+                fasterKVLogger),
+            CacheType.SQLite => new SQLiteCachingService(_providerFactory, _cachingOptions,
+                sqliteLogger),
             _ => throw new ArgumentOutOfRangeException(nameof(cacheType), $"Unsupported cache type: {cacheType}.")
         };
 
         if (_cachingOptions.EncryptionOptions.Enabled)
         {
+            var encryptionLogger = loggerFactory.CreateLogger<EncryptedCacheService>();
             var dataProtectionProvider = _serviceProvider.GetRequiredService<IDataProtectionProvider>();
-            if (_cachingOptions.EncryptionOptions.EncryptionApplicationName != null)
-            {
-                var dataProtector =
-                    dataProtectionProvider.CreateProtector(_cachingOptions.EncryptionOptions.EncryptionApplicationName);
-                return new EncryptedCacheService(baseService, dataProtector, _cachingOptions, logger);
-            }
+            // Correctly use IDataProtectionProvider without converting to IDataProtector
+            return new EncryptedCacheService(baseService, dataProtectionProvider, _cachingOptions,
+                encryptionLogger);
         }
 
         return baseService;

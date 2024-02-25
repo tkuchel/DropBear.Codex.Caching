@@ -36,7 +36,7 @@ public class EncryptedCacheService : ICacheService
         ICacheService baseCacheService,
         IDataProtectionProvider dataProtectionProvider,
         CachingOptions options,
-        ILogger<EncryptedCacheService> logger)
+        ILogger<EncryptedCacheService>? logger)
     {
         if (options == null || string.IsNullOrEmpty(options.EncryptionOptions.EncryptionApplicationName))
             throw new ArgumentException("Encryption options must specify an ApplicationName.");

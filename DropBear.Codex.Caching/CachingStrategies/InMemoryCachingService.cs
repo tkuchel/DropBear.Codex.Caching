@@ -23,7 +23,7 @@ public class InMemoryCachingService : ICacheService, IDisposable
     /// <param name="cachingOptions">The caching configuration options.</param>
     /// <param name="logger">The logger instance for logging operations and errors.</param>
     public InMemoryCachingService(IEasyCachingProviderFactory factory, CachingOptions cachingOptions,
-        ILogger<InMemoryCachingService> logger)
+        ILogger<InMemoryCachingService>? logger)
     {
         _cache = factory?.GetCachingProvider(cachingOptions.InMemoryOptions.CacheName) ??
                  throw new ArgumentNullException(nameof(factory));

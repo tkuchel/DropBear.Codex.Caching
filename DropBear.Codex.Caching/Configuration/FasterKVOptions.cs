@@ -1,4 +1,3 @@
-using FASTER.core;
 
 namespace DropBear.Codex.Caching.Configuration;
 
@@ -9,5 +8,6 @@ public class FasterKVOptions
 {
     public string CacheName { get; set; } = "faster_kv_cache";
     public bool Enabled { get; set; }
+    
 
 }

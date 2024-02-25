@@ -23,7 +23,7 @@ public class FasterKVCachingService : ICacheService, IDisposable
     /// <param name="cachingOptions">The caching configuration options.</param>
     /// <param name="logger">The logger for capturing logs.</param>
     public FasterKVCachingService(IEasyCachingProviderFactory factory, CachingOptions cachingOptions,
-        ILogger<FasterKVCachingService> logger)
+        ILogger<FasterKVCachingService>? logger)
     {
         _cacheOptions = cachingOptions ?? throw new ArgumentNullException(nameof(cachingOptions));
         _cache = factory.GetCachingProvider(_cacheOptions.FasterKVOptions.CacheName);
