@@ -3,7 +3,6 @@ using DropBear.Codex.Caching.Extensions;
 using DropBear.Codex.Caching.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace DropBear.Codex.Caching.ConsoleApp;
 
@@ -34,6 +33,7 @@ internal class Program
 
     private static void ConfigureCachingOptions(IServiceCollection services, IConfiguration configuration)
     {
+        var preloaders = new List<ICachePreloader> { new ExamplePreloader() };
         services.AddCodexCaching(configuration, configure =>
         {
             configure.FasterKVOptions.Enabled = true;
@@ -64,7 +64,7 @@ internal class Program
 
             // Set the FasterKV options
             configure.FasterKVOptions.CacheName = "FasterKVCache";
-        });
+        },preloaders);
     }
 
     private static async Task TestConfiguredCacheServices(IServiceProvider serviceProvider)
@@ -75,7 +75,7 @@ internal class Program
         {
             var cacheService = serviceProvider.GetRequiredService<ICachingServiceFactory>()
                 .GetCachingService(cacheType);
-            if (cacheService != null) await TestCacheService(cacheService, cacheType.ToString());
+            await TestCacheService(cacheService, cacheType.ToString());
         }
     }
 
