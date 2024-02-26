@@ -38,13 +38,43 @@ dotnet add package DropBear.Codex.Caching
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
-    services.AddCodexCaching(options =>
-    {
-        options.InMemoryOptions.Enabled = true;
-        options.SQLiteOptions.Enabled = false; // Example setup
-        // Additional configuration as required
-    }, serviceProvider => serviceProvider.GetRequiredService<ILogger<YourServiceClass>>());
+    ConfigureCachingOptions(services, Configuration);
 }
+
+private static void ConfigureCachingOptions(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddCodexCaching(configuration, configure =>
+        {
+            configure.FasterKVOptions.Enabled = true;
+            configure.SQLiteOptions.Enabled = true;
+            configure.InMemoryOptions.Enabled = true;
+
+            // Set the default cache duration to 5 minutes
+            configure.DefaultCacheDurationMinutes = TimeSpan.FromMinutes(5);
+
+            // Set the encryption options
+            configure.EncryptionOptions.Enabled = true;
+            configure.EncryptionOptions.EncryptionApplicationName = "CodexCaching";
+            configure.EncryptionOptions.KeyStoragePath = @"C:\Temp\Keys";
+
+            // Set the serialization options
+            configure.SerializationOptions.Enabled = true;
+            configure.SerializationOptions.Format = SerializationFormat.MessagePack;
+
+            // Set the compression options
+            configure.CompressionOptions.Enabled = true;
+            configure.CompressionOptions.Algorithm = CompressionAlgorithm.LZ4;
+
+            // Set the SQLite options
+            configure.SQLiteOptions.CacheName = "SQLiteCache";
+
+            // Set the InMemory options
+            configure.InMemoryOptions.CacheName = "InMemoryCache";
+
+            // Set the FasterKV options
+            configure.FasterKVOptions.CacheName = "FasterKVCache";
+        },preloaders: new List<ICachePreloader> { new MyCachePreloader() });
+    }
 ```
 
 2. **Incorporate Cache Preloaders**: For employing cache preloading, define preloaders and add them during
