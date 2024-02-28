@@ -18,12 +18,12 @@ public class CachingOptions
     /// <summary>
     ///     Gets or sets the configuration options for SQLite caching.
     /// </summary>
-    public SQLiteOptions SQLiteOptions { get; set; } = new();
+    public SqLiteOptions SqLiteOptions { get; set; } = new();
 
     /// <summary>
     ///     Gets or sets the configuration options for FasterKV caching.
     /// </summary>
-    public FasterKVOptions FasterKVOptions { get; set; } = new();
+    public FasterKvOptions FasterKvOptions { get; set; } = new();
 
     /// <summary>
     ///     Gets or sets the options for serialization in caching.

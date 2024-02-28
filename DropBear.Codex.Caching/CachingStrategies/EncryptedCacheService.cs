@@ -38,13 +38,13 @@ public class EncryptedCacheService : ICacheService
         CachingOptions options,
         ILogger<EncryptedCacheService>? logger)
     {
-        if (options == null || string.IsNullOrEmpty(options.EncryptionOptions.EncryptionApplicationName))
-            throw new ArgumentException("Encryption options must specify an ApplicationName.");
+        if (options is null || string.IsNullOrEmpty(options.EncryptionOptions.EncryptionApplicationName))
+            throw new ArgumentException("Encryption options must specify an ApplicationName.", nameof(options));
 
         _baseCacheService = baseCacheService ?? throw new ArgumentNullException(nameof(baseCacheService));
         _dataProtector = dataProtectionProvider.CreateProtector(options.EncryptionOptions.EncryptionApplicationName);
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _logger.LogInformation("EncryptedCacheService initialized.");
+        _logger.ZLogInformation($"EncryptedCacheService initialized.");
     }
 
     /// <summary>
@@ -71,7 +71,7 @@ public class EncryptedCacheService : ICacheService
         {
             var jsonData = JsonSerializer.Serialize(value, _jsonSerializerOptions);
             var encryptedData = _dataProtector.Protect(jsonData);
-            await _baseCacheService.SetAsync(key, encryptedData, expiry);
+            await _baseCacheService.SetAsync(key, encryptedData, expiry).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -90,7 +90,7 @@ public class EncryptedCacheService : ICacheService
     {
         try
         {
-            await _baseCacheService.RemoveAsync(key);
+            await _baseCacheService.RemoveAsync(key).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -108,7 +108,7 @@ public class EncryptedCacheService : ICacheService
     {
         try
         {
-            await _baseCacheService.FlushAsync();
+            await _baseCacheService.FlushAsync().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -137,13 +137,13 @@ public class EncryptedCacheService : ICacheService
     {
         try
         {
-            var encryptedData = await _baseCacheService.GetAsync<string>(key);
+            var encryptedData = await _baseCacheService.GetAsync<string>(key).ConfigureAwait(false);
             if (string.IsNullOrEmpty(encryptedData))
             {
                 _logger.ZLogInformation($"Cache miss for key {key}.");
-                if (fallbackFunction == null) return default;
+                if (fallbackFunction is null) return default;
                 _logger.ZLogInformation($"Attempting to retrieve from fallback function for key {key}.");
-                return await fallbackFunction();
+                return await fallbackFunction().ConfigureAwait(false);
             }
 
             var decryptedData = _dataProtector.Unprotect(encryptedData);
@@ -153,12 +153,12 @@ public class EncryptedCacheService : ICacheService
         {
             _logger.ZLogError(ex, $"Error occurred during cache retrieval or processing for key: {key}.");
             // Attempt to use the fallback function to retrieve the data if provided
-            if (fallbackFunction == null) return default;
+            if (fallbackFunction is null) return default;
             try
             {
                 _logger.ZLogInformation(
                     $"Attempting to retrieve from fallback function for key {key} after an error.");
-                return await fallbackFunction();
+                return await fallbackFunction().ConfigureAwait(false);
             }
             catch (Exception fallbackEx)
             {
@@ -169,4 +169,6 @@ public class EncryptedCacheService : ICacheService
             return default;
         }
     }
+    
+    
 }

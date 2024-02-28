@@ -16,7 +16,7 @@ internal class Program
         ConfigureServices(services, configuration);
 
         var serviceProvider = services.BuildServiceProvider();
-        await TestConfiguredCacheServices(serviceProvider);
+        await TestConfiguredCacheServices(serviceProvider).ConfigureAwait(false);
     }
 
     private static IConfiguration LoadConfiguration()
@@ -36,8 +36,8 @@ internal class Program
     {
         services.AddCodexCaching(configuration, configure =>
         {
-            configure.FasterKVOptions.Enabled = true;
-            configure.SQLiteOptions.Enabled = true;
+            configure.FasterKvOptions.Enabled = true;
+            configure.SqLiteOptions.Enabled = true;
             configure.InMemoryOptions.Enabled = true;
 
             // Set the default cache duration to 5 minutes
@@ -54,38 +54,38 @@ internal class Program
 
             // Set the compression options
             configure.CompressionOptions.Enabled = true;
-            configure.CompressionOptions.Algorithm = CompressionAlgorithm.LZ4;
+            configure.CompressionOptions.Algorithm = CompressionAlgorithm.Lz4;
 
             // Set the SQLite options
-            configure.SQLiteOptions.CacheName = "SQLiteCache";
+            configure.SqLiteOptions.CacheName = "SQLiteCache";
 
             // Set the InMemory options
             configure.InMemoryOptions.CacheName = "InMemoryCache";
 
             // Set the FasterKV options
-            configure.FasterKVOptions.CacheName = "FasterKVCache";
+            configure.FasterKvOptions.CacheName = "FasterKVCache";
         });
     }
 
     private static async Task TestConfiguredCacheServices(IServiceProvider serviceProvider)
     {
         // Example: Testing multiple cache services based on configuration or logic
-        var cacheTypes = new[] { CacheType.InMemory, CacheType.SQLite, CacheType.FasterKV };
+        var cacheTypes = new[] { CacheType.InMemory, CacheType.SqLite, CacheType.FasterKv };
         foreach (var cacheType in cacheTypes)
         {
             var cacheService = serviceProvider.GetRequiredService<ICachingServiceFactory>()
                 .GetCachingService(cacheType);
-            if (cacheService != null) await TestCacheService(cacheService, cacheType.ToString());
+            await TestCacheService(cacheService, cacheType.ToString()).ConfigureAwait(false);
         }
     }
 
     private static async Task TestCacheService(ICacheService cacheService, string serviceName)
     {
-        var key = "testKey";
+        const string Key = "testKey";
         var value = $"testValue for {serviceName}";
 
-        await cacheService.SetAsync(key, value, TimeSpan.FromMinutes(5));
-        var cachedValue = await cacheService.GetAsync<string>(key);
+        await cacheService.SetAsync(Key, value, TimeSpan.FromMinutes(5)).ConfigureAwait(false);
+        var cachedValue = await cacheService.GetAsync<string>(Key).ConfigureAwait(false);
 
         Console.WriteLine($"{serviceName} Cached Value: {cachedValue}");
     }

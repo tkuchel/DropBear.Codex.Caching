@@ -7,6 +7,6 @@ namespace DropBear.Codex.Caching.Configuration;
 /// </summary>
 public class CompressionOptions
 {
-    public bool Enabled { get; set; } = false;
+    public bool Enabled { get; set; }
     public CompressionAlgorithm Algorithm { get; set; } = CompressionAlgorithm.Brotli;
 }

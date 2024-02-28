@@ -10,7 +10,7 @@ namespace DropBear.Codex.Caching.CachingStrategies;
 /// <summary>
 ///     Provides an in-memory caching service utilizing EasyCaching.
 /// </summary>
-public class InMemoryCachingService : ICacheService, IDisposable
+public class InMemoryCachingService : ICacheService, IDisposable, IAsyncDisposable
 {
     private readonly IEasyCachingProvider _cache;
     private readonly CachingOptions _cacheOptions;
@@ -25,11 +25,11 @@ public class InMemoryCachingService : ICacheService, IDisposable
     public InMemoryCachingService(IEasyCachingProviderFactory factory, CachingOptions cachingOptions,
         ILogger<InMemoryCachingService>? logger)
     {
-        _cache = factory?.GetCachingProvider(cachingOptions.InMemoryOptions.CacheName) ??
+        _cache = factory.GetCachingProvider(cachingOptions.InMemoryOptions.CacheName) ??
                  throw new ArgumentNullException(nameof(factory));
         _cacheOptions = cachingOptions ?? throw new ArgumentNullException(nameof(cachingOptions));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _logger.LogInformation("InMemoryCachingService initialized.");
+        _logger.ZLogInformation($"InMemoryCachingService initialized.");
     }
 
     /// <summary>
@@ -44,20 +44,20 @@ public class InMemoryCachingService : ICacheService, IDisposable
     {
         try
         {
-            var result = await _cache.GetAsync<T>(key);
+            var result = await _cache.GetAsync<T>(key).ConfigureAwait(false);
             if (result.HasValue) return result.Value;
 
-            if (fallbackFunction == null) return default;
+            if (fallbackFunction is null) return default;
             _logger.ZLogInformation($"Cache miss for key {key}. Attempting to retrieve from fallback function.");
-            return await fallbackFunction();
+            return await fallbackFunction().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             _logger.ZLogError(ex, $"Error retrieving cache item for key: {key}. Attempting fallback if available.");
-            if (fallbackFunction == null) return default; // Return default if the fallback is not provided or fails.
+            if (fallbackFunction is null) return default; // Return default if the fallback is not provided or fails.
             try
             {
-                return await fallbackFunction();
+                return await fallbackFunction().ConfigureAwait(false);
             }
             catch (Exception fallbackEx)
             {
@@ -81,7 +81,7 @@ public class InMemoryCachingService : ICacheService, IDisposable
         try
         {
             await _cache.SetAsync(key, value,
-                expiry ?? _cacheOptions.DefaultCacheDurationMinutes);
+                expiry ?? _cacheOptions.DefaultCacheDurationMinutes).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -98,7 +98,7 @@ public class InMemoryCachingService : ICacheService, IDisposable
     {
         try
         {
-            await _cache.RemoveAsync(key);
+            await _cache.RemoveAsync(key).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -114,7 +114,7 @@ public class InMemoryCachingService : ICacheService, IDisposable
     {
         try
         {
-            await _cache.FlushAsync();
+            await _cache.FlushAsync().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -127,6 +127,42 @@ public class InMemoryCachingService : ICacheService, IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_cache is IDisposable disposableCache) disposableCache.Dispose();
+        // Synchronously dispose of any resources
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // Asynchronously dispose of any resources
+        await DisposeAsyncCore().ConfigureAwait(false);
+
+        // Dispose of any synchronous resources as well
+        Dispose(disposing: false); // Pass false to indicate asynchronous disposal
+
+        GC.SuppressFinalize(this);
+    }
+
+    private static void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            // Dispose synchronous resources here
+        }
+    }
+
+    private async ValueTask DisposeAsyncCore()
+    {
+        switch (_cache)
+        {
+            // Asynchronously dispose of any resources here
+            // ReSharper disable once SuspiciousTypeConversion.Global
+            case IAsyncDisposable asyncDisposable:
+                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                break;
+            case IDisposable disposable:
+                disposable.Dispose();
+                break;
+        }
     }
 }

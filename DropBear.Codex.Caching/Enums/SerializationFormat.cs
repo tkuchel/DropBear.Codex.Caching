@@ -14,5 +14,5 @@ public enum SerializationFormat
     /// <summary>
     /// MessagePack serialization, optimized for performance and compactness.
     /// </summary>
-    MessagePack
+    MessagePack,
 }

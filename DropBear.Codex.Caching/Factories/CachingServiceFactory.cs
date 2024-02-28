@@ -6,6 +6,8 @@ using EasyCaching.Core;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
 
 namespace DropBear.Codex.Caching.Factories;
 
@@ -13,18 +15,13 @@ namespace DropBear.Codex.Caching.Factories;
 ///     Factory for creating caching service instances based on specified cache types.
 ///     Supports optional encryption based on configuration settings.
 /// </summary>
-public class CachingServiceFactory : ICachingServiceFactory
+public class CachingServiceFactory : ICachingServiceFactory, IDisposable
 {
     private readonly CachingOptions _cachingOptions;
     private readonly IEasyCachingProviderFactory _providerFactory;
     private readonly IServiceProvider _serviceProvider;
+    private readonly List<ICacheService> _trackedServices = new List<ICacheService>();
 
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="CachingServiceFactory" /> class.
-    /// </summary>
-    /// <param name="providerFactory">The factory used to create caching providers.</param>
-    /// <param name="cachingOptions">The options for configuring caching services.</param>
-    /// <param name="serviceProvider">The service provider for resolving additional services like data protection.</param>
     public CachingServiceFactory(
         IEasyCachingProviderFactory providerFactory,
         CachingOptions cachingOptions,
@@ -35,46 +32,44 @@ public class CachingServiceFactory : ICachingServiceFactory
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
 
-    /// <summary>
-    ///     Creates and returns an <see cref="ICacheService" /> instance based on the specified <see cref="CacheType" />.
-    ///     Wraps the cache service with encryption functionality if enabled in the caching options.
-    /// </summary>
-    /// <param name="cacheType">The type of cache to create.</param>
-    /// <returns>
-    ///     An instance of an object that implements <see cref="ICacheService" />, configured according to the cache type
-    ///     and encryption settings.
-    /// </returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when an unsupported <see cref="CacheType" /> is specified.</exception>
     public ICacheService GetCachingService(CacheType cacheType)
     {
         var loggerFactory = _serviceProvider.GetRequiredService<ILoggerFactory>();
 
-        // Correctly create generic loggers for each caching service type
-        var inmemoryLogger = loggerFactory.CreateLogger<InMemoryCachingService>();
-        var fasterKVLogger = loggerFactory.CreateLogger<FasterKVCachingService>();
-        var sqliteLogger = loggerFactory.CreateLogger<SQLiteCachingService>();
-
+        var inMemoryLogger = loggerFactory.CreateLogger<InMemoryCachingService>();
+        var fasterKvLogger = loggerFactory.CreateLogger<FasterKvCachingService>();
+        var sqliteLogger = loggerFactory.CreateLogger<SqLiteCachingService>();
 
         ICacheService baseService = cacheType switch
         {
-            CacheType.InMemory => new InMemoryCachingService(_providerFactory, _cachingOptions,
-                inmemoryLogger),
-            CacheType.FasterKV => new FasterKVCachingService(_providerFactory, _cachingOptions,
-                fasterKVLogger),
-            CacheType.SQLite => new SQLiteCachingService(_providerFactory, _cachingOptions,
-                sqliteLogger),
+            CacheType.InMemory => new InMemoryCachingService(_providerFactory, _cachingOptions, inMemoryLogger),
+            CacheType.FasterKv => new FasterKvCachingService(_providerFactory, _cachingOptions, fasterKvLogger),
+            CacheType.SqLite => new SqLiteCachingService(_providerFactory, _cachingOptions, sqliteLogger),
             _ => throw new ArgumentOutOfRangeException(nameof(cacheType), $"Unsupported cache type: {cacheType}.")
         };
 
-        if (_cachingOptions.EncryptionOptions.Enabled)
-        {
-            var encryptionLogger = loggerFactory.CreateLogger<EncryptedCacheService>();
-            var dataProtectionProvider = _serviceProvider.GetRequiredService<IDataProtectionProvider>();
-            // Correctly use IDataProtectionProvider without converting to IDataProtector
-            return new EncryptedCacheService(baseService, dataProtectionProvider, _cachingOptions,
-                encryptionLogger);
-        }
+        // Track created service for disposal
+        _trackedServices.Add(baseService);
 
-        return baseService;
+        if (!_cachingOptions.EncryptionOptions.Enabled) return baseService;
+        var encryptionLogger = loggerFactory.CreateLogger<EncryptedCacheService>();
+        var dataProtectionProvider = _serviceProvider.GetRequiredService<IDataProtectionProvider>();
+
+        var encryptedService = new EncryptedCacheService(baseService, dataProtectionProvider, _cachingOptions, encryptionLogger);
+        _trackedServices.Add(encryptedService);
+
+        return encryptedService;
+    }
+
+    public void Dispose()
+    {
+        foreach (var service in _trackedServices)
+        {
+            if (service is IDisposable disposableService)
+            {
+                disposableService.Dispose();
+            }
+        }
+        _trackedServices.Clear();
     }
 }

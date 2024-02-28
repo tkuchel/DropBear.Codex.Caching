@@ -13,10 +13,10 @@ public enum CacheType
     /// <summary>
     /// A cache using FasterKV, optimized for high-performance scenarios.
     /// </summary>
-    FasterKV,
+    FasterKv,
     
     /// <summary>
     /// A cache stored using SQLite, suitable for persistent storage.
     /// </summary>
-    SQLite
+    SqLite
 }

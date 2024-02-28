@@ -18,6 +18,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="Meziantou.DotNet.CodingStandard" Version="1.0.119">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
       <PackageReference Include="ZLogger" Version="2.4.1" />
       <PackageReference Include="ZLogger.MessagePack" Version="2.4.1" />
     </ItemGroup>

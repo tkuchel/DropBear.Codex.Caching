@@ -15,8 +15,8 @@ public static class CacheTypeExtensions
         return cacheType switch
         {
             CacheType.InMemory => typeof(InMemoryCachingService),
-            CacheType.FasterKV => typeof(FasterKVCachingService),
-            CacheType.SQLite => typeof(SQLiteCachingService),
+            CacheType.FasterKv => typeof(FasterKvCachingService),
+            CacheType.SqLite => typeof(SqLiteCachingService),
             _ => throw new ArgumentOutOfRangeException(nameof(cacheType), $"Unsupported cache type: {cacheType}.")
         };
     }

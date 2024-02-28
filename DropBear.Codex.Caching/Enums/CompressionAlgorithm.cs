@@ -13,5 +13,5 @@ public enum CompressionAlgorithm
     /// <summary>
     /// LZ4 compression algorithm, known for its high-speed and decent compression ratio.
     /// </summary>
-    LZ4,
+    Lz4,
 }

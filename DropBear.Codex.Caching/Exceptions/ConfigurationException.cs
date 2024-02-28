@@ -58,4 +58,8 @@ public class ConfigurationException : Exception
     ///     Gets the name of the property that caused the current exception.
     /// </summary>
     public string? PropertyName { get; }
+
+    public ConfigurationException()
+    {
+    }
 }

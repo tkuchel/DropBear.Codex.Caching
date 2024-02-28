@@ -4,17 +4,11 @@ using Microsoft.Extensions.Options;
 
 namespace DropBear.Codex.Caching.Configuration;
 
-public class ConfigureEasyCachingOptions : IConfigureOptions<EasyCachingOptions>
+public class ConfigureEasyCachingOptions(ICachingConfigurationService cachingConfigurationService)
+    : IConfigureOptions<EasyCachingOptions>
 {
-    private readonly ICachingConfigurationService _cachingConfigurationService;
-
-    public ConfigureEasyCachingOptions(ICachingConfigurationService cachingConfigurationService)
-    {
-        _cachingConfigurationService = cachingConfigurationService;
-    }
-
     public void Configure(EasyCachingOptions options)
     {
-        _cachingConfigurationService.ConfigureEasyCaching(options);
+        cachingConfigurationService.ConfigureEasyCaching(options);
     }
 }

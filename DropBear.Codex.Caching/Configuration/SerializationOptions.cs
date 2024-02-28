@@ -7,7 +7,7 @@ namespace DropBear.Codex.Caching.Configuration;
 /// </summary>
 public class SerializationOptions
 {
-    public bool Enabled { get; set; } = false;
+    public bool Enabled { get; set; }
     public SerializationFormat Format { get; set; } = SerializationFormat.Json;
     
 }

@@ -4,15 +4,8 @@ using ZLogger;
 
 namespace DropBear.Codex.Caching.Configuration;
 
-public class ConfigurationLoader
+public class ConfigurationLoader(ILogger<ConfigurationLoader> logger)
 {
-    private readonly ILogger<ConfigurationLoader> _logger;
-
-    public ConfigurationLoader(ILogger<ConfigurationLoader> logger)
-    {
-        _logger = logger;
-    }
-
     public CachingOptions LoadCachingOptions(IConfiguration configuration, string sectionName = "CachingOptions")
     {
         var cachingOptions = new CachingOptions();
@@ -22,16 +15,16 @@ public class ConfigurationLoader
             if (configSection.Exists())
             {
                 configSection.Bind(cachingOptions);
-                _logger.ZLogInformation($"Successfully loaded {sectionName} configuration.");
+                logger.ZLogInformation($"Successfully loaded {sectionName} configuration.");
             }
             else
             {
-                _logger.ZLogWarning($"{sectionName} section not found in configuration. Using default values.");
+                logger.ZLogWarning($"{sectionName} section not found in configuration. Using default values.");
             }
         }
         catch (Exception ex)
         {
-            _logger.ZLogError(ex, $"Error loading {sectionName} from configuration.");
+            logger.ZLogError(ex, $"Error loading {sectionName} from configuration.");
         }
 
         // Optionally, validate and apply defaults after loading
@@ -40,17 +33,17 @@ public class ConfigurationLoader
         return cachingOptions;
     }
 
-    public CachingOptions ConfigureCachingOptions(Action<CachingOptions> configureAction)
+    public CachingOptions ConfigureCachingOptions(Action<CachingOptions>? configureAction)
     {
         var cachingOptions = new CachingOptions();
         try
         {
-            configureAction(cachingOptions);
-            _logger.ZLogInformation($"CachingOptions configured programmatically.");
+            configureAction?.Invoke(cachingOptions);
+            logger.ZLogInformation($"CachingOptions configured programmatically.");
         }
         catch (Exception ex)
         {
-            _logger.ZLogError(ex, $"Error configuring CachingOptions programmatically.");
+            logger.ZLogError(ex, $"Error configuring CachingOptions programmatically.");
         }
 
         // Optionally, validate and apply defaults after configuring
@@ -59,9 +52,11 @@ public class ConfigurationLoader
         return cachingOptions;
     }
 
-    private void ValidateAndApplyDefaults(CachingOptions options)
+    // ReSharper disable once UnusedParameter.Local
+    private static void ValidateAndApplyDefaults(CachingOptions options)
     {
         // Implement validation logic here
         // Apply default values if necessary
+        
     }
 }

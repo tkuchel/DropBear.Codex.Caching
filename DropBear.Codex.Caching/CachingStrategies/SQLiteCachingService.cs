@@ -10,11 +10,11 @@ namespace DropBear.Codex.Caching.CachingStrategies;
 /// <summary>
 ///     Provides a SQLite caching service utilizing EasyCaching.
 /// </summary>
-public class SQLiteCachingService : ICacheService, IDisposable
+public class SqLiteCachingService : ICacheService, IDisposable, IAsyncDisposable
 {
     private readonly IEasyCachingProvider _cache;
     private readonly CachingOptions _cacheOptions;
-    private readonly ILogger<SQLiteCachingService> _logger;
+    private readonly ILogger<SqLiteCachingService> _logger;
 
     /// <summary>
     ///     Initializes a new instance of the SQLiteCachingService class.
@@ -22,14 +22,14 @@ public class SQLiteCachingService : ICacheService, IDisposable
     /// <param name="factory">The EasyCaching provider factory.</param>
     /// <param name="cachingOptions">The caching configuration options.</param>
     /// <param name="logger">The logger for capturing logs within the service.</param>
-    public SQLiteCachingService(IEasyCachingProviderFactory factory, CachingOptions cachingOptions,
-        ILogger<SQLiteCachingService>? logger)
+    public SqLiteCachingService(IEasyCachingProviderFactory factory, CachingOptions cachingOptions,
+        ILogger<SqLiteCachingService>? logger)
     {
         _cacheOptions = cachingOptions ?? throw new ArgumentNullException(nameof(cachingOptions));
-        _cache = factory.GetCachingProvider(_cacheOptions.SQLiteOptions.CacheName) ??
+        _cache = factory.GetCachingProvider(_cacheOptions.SqLiteOptions.CacheName) ??
                  throw new ArgumentNullException(nameof(factory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _logger.LogInformation("SQLiteCachingService initialized.");
+        _logger.ZLogInformation($"SQLiteCachingService initialized.");
     }
 
     /// <summary>
@@ -44,20 +44,20 @@ public class SQLiteCachingService : ICacheService, IDisposable
     {
         try
         {
-            var result = await _cache.GetAsync<T>(key);
+            var result = await _cache.GetAsync<T>(key).ConfigureAwait(false);
             if (result.HasValue) return result.Value;
 
-            if (fallbackFunction == null) return default;
+            if (fallbackFunction is null) return default;
             _logger.ZLogInformation($"Cache miss for key {key}. Attempting to retrieve from fallback function.");
-            return await fallbackFunction();
+            return await fallbackFunction().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             _logger.ZLogError(ex, $"Error retrieving cache item for key: {key}. Attempting fallback if available.");
-            if (fallbackFunction == null) return default; // Return default if the fallback is not provided or fails.
+            if (fallbackFunction is null) return default; // Return default if the fallback is not provided or fails.
             try
             {
-                return await fallbackFunction();
+                return await fallbackFunction().ConfigureAwait(false);
             }
             catch (Exception fallbackEx)
             {
@@ -82,7 +82,7 @@ public class SQLiteCachingService : ICacheService, IDisposable
         try
         {
             await _cache.SetAsync(key, value,
-                expiry ?? _cacheOptions.DefaultCacheDurationMinutes);
+                expiry ?? _cacheOptions.DefaultCacheDurationMinutes).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -99,7 +99,7 @@ public class SQLiteCachingService : ICacheService, IDisposable
     {
         try
         {
-            await _cache.RemoveAsync(key);
+            await _cache.RemoveAsync(key).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -115,19 +115,54 @@ public class SQLiteCachingService : ICacheService, IDisposable
     {
         try
         {
-            await _cache.FlushAsync();
+            await _cache.FlushAsync().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             _logger.ZLogError(ex, $"Error flushing cache.");
         }
     }
-
     /// <summary>
     ///     Disposes the cache provider if it implements IDisposable.
     /// </summary>
     public void Dispose()
     {
-        if (_cache is IDisposable disposableCache) disposableCache.Dispose();
+        // Synchronously dispose of any resources
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // Asynchronously dispose of any resources
+        await DisposeAsyncCore().ConfigureAwait(false);
+
+        // Dispose of any synchronous resources as well
+        Dispose(disposing: false); // Pass false to indicate asynchronous disposal
+
+        GC.SuppressFinalize(this);
+    }
+
+    private static void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            // Dispose synchronous resources here
+        }
+    }
+
+    private async ValueTask DisposeAsyncCore()
+    {
+        switch (_cache)
+        {
+            // Asynchronously dispose of any resources here
+            // ReSharper disable once SuspiciousTypeConversion.Global
+            case IAsyncDisposable asyncDisposable:
+                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                break;
+            case IDisposable disposable:
+                disposable.Dispose();
+                break;
+        }
     }
 }

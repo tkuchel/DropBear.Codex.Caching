@@ -11,7 +11,7 @@
         <Description>The DropBear Codex Caching Library is a comprehensive caching solution designed for .NET applications.</Description>
         <Copyright>2024 Terrence Kuchel</Copyright>
         <PackageProjectUrl>https://github.com/tkuchel/DropBear.Codex.Caching</PackageProjectUrl>
-        <PackageLicenseUrl>https://www.gnu.org/licenses/lgpl-3.0.html#license-text</PackageLicenseUrl>
+        <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
         <RepositoryUrl>https://github.com/tkuchel/DropBear.Codex.Caching</RepositoryUrl>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <RepositoryType>Git</RepositoryType>
@@ -28,8 +28,14 @@
       <PackageReference Include="EasyCaching.Serialization.MessagePack" Version="1.9.2" />
       <PackageReference Include="EasyCaching.SQLite" Version="1.9.2" />
       <PackageReference Include="EasyCompressor.LZ4" Version="2.0.2" />
-      <PackageReference Include="MemoryPack" Version="1.10.0" />
-      <PackageReference Include="MethodTimer.Fody" Version="3.2.2" />
+        <PackageReference Include="MemoryPack" Version="1.10.0" />
+      <PackageReference Include="MethodTimer.Fody" Version="3.2.2">
+          <PrivateAssets>all</PrivateAssets>
+      </PackageReference>
+      <PackageReference Include="Meziantou.DotNet.CodingStandard" Version="1.0.119">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
       <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="8.0.2" />
       <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
       <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="8.0.0" />

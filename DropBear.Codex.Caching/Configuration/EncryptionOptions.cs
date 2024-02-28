@@ -7,7 +7,7 @@ public class EncryptionOptions
     /// <summary>
     ///     Gets or sets a value indicating whether encryption is used for cache entries.
     /// </summary>
-    public bool Enabled { get; set; } = false;
+    public bool Enabled { get; set; }
 
     /// <summary>
     ///     Gets or sets the application name used for scoping the data protection purposes in encryption.
