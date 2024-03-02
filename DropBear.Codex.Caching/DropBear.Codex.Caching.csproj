@@ -18,6 +18,18 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
+
+    <Target Name="PreBuild" BeforeTargets="PreBuildEvent" Condition="'$(CI)' != 'true'">
+        <Message Text="Running prebuild scripts."/>
+        <ItemGroup>
+            <VersionFiles Include="**\*.csproj;**\version.json"/>
+        </ItemGroup>
+        <Exec Command="powershell.exe -NonInteractive -ExecutionPolicy Unrestricted -File &quot;T:\PowershellScripts\RiderPrebuildScript.ps1&quot; &quot;$(MSBuildProjectFullPath)&quot; &quot;$(MSBuildProjectFullPath)\..\..\version.json&quot;">
+            <Output TaskParameter="ExitCode" PropertyName="ExitCode"/>
+        </Exec>
+        <Touch Files="@(VersionFiles)" AlwaysCreate="true"/>
+    </Target>
+
     <ItemGroup>
       <PackageReference Include="EasyCaching.Core" Version="1.9.2" />
       <PackageReference Include="EasyCaching.Extensions.EasyCompressor" Version="2.0.2" />
