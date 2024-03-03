@@ -11,7 +11,7 @@
         <Description>The DropBear Codex Caching Library is a comprehensive caching solution designed for .NET applications.</Description>
         <Copyright>2024 Terrence Kuchel</Copyright>
         <PackageProjectUrl>https://github.com/tkuchel/DropBear.Codex.Caching</PackageProjectUrl>
-        <PackageLicenseUrl>https://www.gnu.org/licenses/lgpl-3.0.html#license-text</PackageLicenseUrl>
+        <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
         <RepositoryUrl>https://github.com/tkuchel/DropBear.Codex.Caching</RepositoryUrl>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <RepositoryType>Git</RepositoryType>
