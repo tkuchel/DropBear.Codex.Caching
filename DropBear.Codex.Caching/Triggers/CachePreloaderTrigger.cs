@@ -27,7 +27,7 @@ public static class CachePreloaderTrigger
 
         // Preloader registration check
         var cachePreloaders = preloaders as ICachePreloader[] ?? preloaders.ToArray();
-        if (!cachePreloaders.Any())
+        if (cachePreloaders.Length is 0)
         {
             logger?.ZLogInformation($"No cache preloaders found.");
             return;
@@ -37,7 +37,7 @@ public static class CachePreloaderTrigger
         foreach (var preloader in cachePreloaders)
             try
             {
-                await preloader.PreloadAsync();
+                await preloader.PreloadAsync().ConfigureAwait(false);
                 PreloadingState.PreloadingExecuted = true;
                 logger?.ZLogInformation($"Preloading completed for {preloader.GetType().Name}.");
             }
