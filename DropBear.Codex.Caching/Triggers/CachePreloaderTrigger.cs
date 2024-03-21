@@ -32,7 +32,7 @@ public static class CachePreloaderTrigger
                     PreloadingState.PreloadingExecuted = true;
                 }
 #pragma warning disable CS0168 // Variable is declared but never used
-                catch (Exception ex)
+                catch (Exception)
 #pragma warning restore CS0168 // Variable is declared but never used
                 {
                     PreloadingState.PreloadingExecuted = false;

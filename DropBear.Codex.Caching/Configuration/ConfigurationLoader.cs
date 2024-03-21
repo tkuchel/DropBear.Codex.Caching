@@ -28,7 +28,7 @@ public class ConfigurationLoader(IAppLogger<ConfigurationLoader> logger)
         }
 
         // Optionally, validate and apply defaults after loading
-        ValidateAndApplyDefaults(cachingOptions);
+        // ValidateAndApplyDefaults(cachingOptions);
 
         return cachingOptions;
     }
@@ -46,16 +46,7 @@ public class ConfigurationLoader(IAppLogger<ConfigurationLoader> logger)
             logger.LogError(ex, "Error configuring CachingOptions programmatically.");
         }
 
-        // Optionally, validate and apply defaults after configuring
-        ValidateAndApplyDefaults(cachingOptions);
-
         return cachingOptions;
     }
 
-    // ReSharper disable once UnusedParameter.Local
-    private static void ValidateAndApplyDefaults(CachingOptions options)
-    {
-        // Implement validation logic here
-        // Apply default values if necessary
-    }
 }
