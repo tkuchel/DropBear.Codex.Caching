@@ -1,10 +1,10 @@
+using Cysharp.Text;
+using DropBear.Codex.AppLogger.Interfaces;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using ZLogger;
 
 namespace DropBear.Codex.Caching.Configuration;
 
-public class ConfigurationLoader(ILogger<ConfigurationLoader> logger)
+public class ConfigurationLoader(IAppLogger<ConfigurationLoader> logger)
 {
     public CachingOptions LoadCachingOptions(IConfiguration configuration, string sectionName = "CachingOptions")
     {
@@ -15,16 +15,16 @@ public class ConfigurationLoader(ILogger<ConfigurationLoader> logger)
             if (configSection.Exists())
             {
                 configSection.Bind(cachingOptions);
-                logger.ZLogInformation($"Successfully loaded {sectionName} configuration.");
+                logger.LogInformation(ZString.Format("{0} section loaded from configuration.", sectionName));
             }
             else
             {
-                logger.ZLogWarning($"{sectionName} section not found in configuration. Using default values.");
+                logger.LogWarning(ZString.Format("{0} section not found in configuration.", sectionName));
             }
         }
         catch (Exception ex)
         {
-            logger.ZLogError(ex, $"Error loading {sectionName} from configuration.");
+            logger.LogError(ex, "Error loading CachingOptions from configuration.");
         }
 
         // Optionally, validate and apply defaults after loading
@@ -39,11 +39,11 @@ public class ConfigurationLoader(ILogger<ConfigurationLoader> logger)
         try
         {
             configureAction?.Invoke(cachingOptions);
-            logger.ZLogInformation($"CachingOptions configured programmatically.");
+            logger.LogInformation("CachingOptions configured programmatically.");
         }
         catch (Exception ex)
         {
-            logger.ZLogError(ex, $"Error configuring CachingOptions programmatically.");
+            logger.LogError(ex, "Error configuring CachingOptions programmatically.");
         }
 
         // Optionally, validate and apply defaults after configuring
@@ -57,6 +57,5 @@ public class ConfigurationLoader(ILogger<ConfigurationLoader> logger)
     {
         // Implement validation logic here
         // Apply default values if necessary
-        
     }
 }

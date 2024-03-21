@@ -1,12 +1,10 @@
+using DropBear.Codex.AppLogger.Interfaces;
 using DropBear.Codex.Caching.Configuration;
 using DropBear.Codex.Caching.Enums;
 using DropBear.Codex.Caching.Exceptions;
 using DropBear.Codex.Caching.Interfaces;
 using EasyCaching.Core.Configurations;
-using MethodTimer;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using ZLogger;
 
 namespace DropBear.Codex.Caching.Services;
 
@@ -15,7 +13,7 @@ namespace DropBear.Codex.Caching.Services;
 /// </summary>
 public class CachingConfigurationService : ICachingConfigurationService
 {
-    private readonly ILogger<CachingConfigurationService> _logger;
+    private readonly IAppLogger<CachingConfigurationService> _logger;
     private readonly CachingOptions _options;
 
     /// <summary>
@@ -23,7 +21,7 @@ public class CachingConfigurationService : ICachingConfigurationService
     /// </summary>
     /// <param name="options">The caching configuration options.</param>
     /// <param name="logger">The logger for logging information and errors.</param>
-    public CachingConfigurationService(CachingOptions options, ILogger<CachingConfigurationService>? logger)
+    public CachingConfigurationService(CachingOptions options, IAppLogger<CachingConfigurationService>? logger)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -33,14 +31,15 @@ public class CachingConfigurationService : ICachingConfigurationService
     ///     Configures EasyCaching options based on the provided <see cref="CachingOptions" />.
     /// </summary>
     /// <param name="options">The EasyCaching options to configure.</param>
-    [Time]
     public void ConfigureEasyCaching(EasyCachingOptions options)
     {
         var serName = _options.SerializationOptions.Format switch
         {
             SerializationFormat.MessagePack => Constants.MessagePackSerializerName,
             SerializationFormat.Json => Constants.JsonSerializerName,
-            _ => throw new ArgumentOutOfRangeException($"Unsupported serialization format: {_options.SerializationOptions.Format}.",nameof(_options.SerializationOptions.Format))
+            _ => throw new ArgumentOutOfRangeException(
+                $"Unsupported serialization format: {_options.SerializationOptions.Format}.",
+                nameof(_options.SerializationOptions.Format))
         };
 
         try
@@ -78,13 +77,12 @@ public class CachingConfigurationService : ICachingConfigurationService
         }
         catch (Exception ex)
         {
-            _logger.ZLogError(ex, $"Error configuring caching services.");
+            _logger.LogError(ex, "Error configuring caching services.");
             throw new ConfigurationException("Error configuring caching services.", ex);
         }
     }
 
 
-    [Time]
     private void ConfigureSerialization(EasyCachingOptions options, SerializationOptions serializationOptions)
     {
         try
@@ -94,7 +92,7 @@ public class CachingConfigurationService : ICachingConfigurationService
                 // Serialization is now a requirement, so throw an error if it's disabled or fallback to a safe, versatile serializer.
                 // This defaults to JSON for testing purposes.
                 options.WithJson(Constants.JsonSerializerName);
-                _logger.ZLogWarning($"Serialization is disabled. Defaulting to JSON serialization.");
+                _logger.LogWarning("Serialization is disabled. Defaulting to JSON serialization.");
                 return;
             }
 
@@ -109,18 +107,19 @@ public class CachingConfigurationService : ICachingConfigurationService
                     break;
                 // Removed the case for SerializationFormat.None
                 default:
-                    throw new ArgumentOutOfRangeException($"Unsupported serialization format: {serializationOptions.Format}.",nameof(serializationOptions.Format));
+                    throw new ArgumentOutOfRangeException(
+                        $"Unsupported serialization format: {serializationOptions.Format}.",
+                        nameof(serializationOptions.Format));
             }
         }
         catch (Exception ex)
         {
-            _logger.ZLogError(ex, $"Error configuring serialization.");
+            _logger.LogError(ex, "Error configuring serialization.");
             throw new ConfigurationException("Error configuring serialization.", ex);
         }
     }
 
 
-    [Time]
     private void ConfigureCompression(EasyCachingOptions options, CompressionOptions compressionOptions)
     {
         try
@@ -136,12 +135,14 @@ public class CachingConfigurationService : ICachingConfigurationService
                     options.WithCompressor(Constants.Lz4CompressionName); // Globally apply LZ4 compression
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException($"Unsupported compression algorithm: {compressionOptions.Algorithm}.",nameof(compressionOptions.Algorithm));
+                    throw new ArgumentOutOfRangeException(
+                        $"Unsupported compression algorithm: {compressionOptions.Algorithm}.",
+                        nameof(compressionOptions.Algorithm));
             }
         }
         catch (Exception ex)
         {
-            _logger.ZLogError(ex, $"Error configuring compression.");
+            _logger.LogError(ex, "Error configuring compression.");
             throw new ConfigurationException("Error configuring compression.", ex);
         }
     }

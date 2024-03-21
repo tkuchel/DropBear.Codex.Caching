@@ -1,9 +1,8 @@
+using Cysharp.Text;
+using DropBear.Codex.AppLogger.Interfaces;
 using DropBear.Codex.Caching.Configuration;
 using DropBear.Codex.Caching.Interfaces;
 using EasyCaching.Core;
-using MethodTimer;
-using Microsoft.Extensions.Logging;
-using ZLogger;
 
 namespace DropBear.Codex.Caching.CachingStrategies;
 
@@ -14,7 +13,7 @@ public class InMemoryCachingService : ICacheService, IDisposable, IAsyncDisposab
 {
     private readonly IEasyCachingProvider _cache;
     private readonly CachingOptions _cacheOptions;
-    private readonly ILogger<InMemoryCachingService> _logger;
+    private readonly IAppLogger<InMemoryCachingService> _logger;
 
     /// <summary>
     ///     Initializes a new instance of the InMemoryCachingService class.
@@ -23,13 +22,24 @@ public class InMemoryCachingService : ICacheService, IDisposable, IAsyncDisposab
     /// <param name="cachingOptions">The caching configuration options.</param>
     /// <param name="logger">The logger instance for logging operations and errors.</param>
     public InMemoryCachingService(IEasyCachingProviderFactory factory, CachingOptions cachingOptions,
-        ILogger<InMemoryCachingService>? logger)
+        IAppLogger<InMemoryCachingService>? logger)
     {
         _cache = factory.GetCachingProvider(cachingOptions.InMemoryOptions.CacheName) ??
                  throw new ArgumentNullException(nameof(factory));
         _cacheOptions = cachingOptions ?? throw new ArgumentNullException(nameof(cachingOptions));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _logger.ZLogInformation($"InMemoryCachingService initialized.");
+        _logger.LogInformation("InMemoryCachingService initialized.");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // Asynchronously dispose of any resources
+        await DisposeAsyncCore().ConfigureAwait(false);
+
+        // Dispose of any synchronous resources as well
+        Dispose(false); // Pass false to indicate asynchronous disposal
+
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -39,7 +49,6 @@ public class InMemoryCachingService : ICacheService, IDisposable, IAsyncDisposab
     /// <param name="key">The cache key.</param>
     /// <param name="fallbackFunction">An optional function to retrieve the item if it's not found in the cache.</param>
     /// <returns>The cached item if found; otherwise, the result of the fallback function, or default.</returns>
-    [Time]
     public async Task<T?> GetAsync<T>(string key, Func<Task<T?>>? fallbackFunction = null)
     {
         try
@@ -48,12 +57,13 @@ public class InMemoryCachingService : ICacheService, IDisposable, IAsyncDisposab
             if (result.HasValue) return result.Value;
 
             if (fallbackFunction is null) return default;
-            _logger.ZLogInformation($"Cache miss for key {key}. Attempting to retrieve from fallback function.");
+            _logger.LogInformation(
+                ZString.Format($"Cache miss for key {key}. Attempting to retrieve from fallback function.", key));
             return await fallbackFunction().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            _logger.ZLogError(ex, $"Error retrieving cache item for key: {key}. Attempting fallback if available.");
+            _logger.LogError(ex, ZString.Format($"Error retrieving cache item for key: {key}", key));
             if (fallbackFunction is null) return default; // Return default if the fallback is not provided or fails.
             try
             {
@@ -61,7 +71,7 @@ public class InMemoryCachingService : ICacheService, IDisposable, IAsyncDisposab
             }
             catch (Exception fallbackEx)
             {
-                _logger.ZLogError(fallbackEx, $"Fallback function also failed for key: {key}.");
+                _logger.LogError(fallbackEx, ZString.Format($"Error executing fallback function for key: {key}", key));
             }
 
             return default; // Return default if the fallback is not provided or fails.
@@ -75,7 +85,6 @@ public class InMemoryCachingService : ICacheService, IDisposable, IAsyncDisposab
     /// <param name="key">The cache key.</param>
     /// <param name="value">The item to cache.</param>
     /// <param name="expiry">The expiration time, if any.</param>
-    [Time]
     public async Task SetAsync<T>(string key, T value, TimeSpan? expiry = null)
     {
         try
@@ -85,7 +94,7 @@ public class InMemoryCachingService : ICacheService, IDisposable, IAsyncDisposab
         }
         catch (Exception ex)
         {
-            _logger.ZLogError(ex, $"Error setting cache item for key: {key}");
+            _logger.LogError(ex, ZString.Format($"Error setting cache item for key: {key}", key));
         }
     }
 
@@ -93,7 +102,6 @@ public class InMemoryCachingService : ICacheService, IDisposable, IAsyncDisposab
     ///     Removes a cached item by its key.
     /// </summary>
     /// <param name="key">The cache key.</param>
-    [Time]
     public async Task RemoveAsync(string key)
     {
         try
@@ -102,14 +110,13 @@ public class InMemoryCachingService : ICacheService, IDisposable, IAsyncDisposab
         }
         catch (Exception ex)
         {
-            _logger.ZLogError(ex, $"Error removing cache item for key: {key}");
+            _logger.LogError(ex, ZString.Format($"Error removing cache item for key: {key}", key));
         }
     }
 
     /// <summary>
     ///     Clears all items from the cache.
     /// </summary>
-    [Time]
     public async Task FlushAsync()
     {
         try
@@ -118,7 +125,7 @@ public class InMemoryCachingService : ICacheService, IDisposable, IAsyncDisposab
         }
         catch (Exception ex)
         {
-            _logger.ZLogError(ex, $"Error flushing cache.");
+            _logger.LogError(ex, "Error flushing cache.");
         }
     }
 
@@ -128,18 +135,7 @@ public class InMemoryCachingService : ICacheService, IDisposable, IAsyncDisposab
     public void Dispose()
     {
         // Synchronously dispose of any resources
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        // Asynchronously dispose of any resources
-        await DisposeAsyncCore().ConfigureAwait(false);
-
-        // Dispose of any synchronous resources as well
-        Dispose(disposing: false); // Pass false to indicate asynchronous disposal
-
+        Dispose(true);
         GC.SuppressFinalize(this);
     }
 

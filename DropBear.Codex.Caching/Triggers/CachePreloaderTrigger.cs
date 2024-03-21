@@ -1,8 +1,8 @@
+using Cysharp.Text;
 using DropBear.Codex.Caching.Interfaces;
 using DropBear.Codex.Caching.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using ZLogger;
 
 namespace DropBear.Codex.Caching.Triggers;
 
@@ -17,7 +17,7 @@ public static class CachePreloaderTrigger
         // Check if preloading has already occured
         if (PreloadingState.PreloadingExecuted)
         {
-            logger?.ZLogInformation($"Cache preloading has already been executed, skipping.");
+            logger?.LogInformation("Cache preloading has already been executed, skipping.");
             return; // Preloading has already been executed, skip.
         }
 
@@ -29,7 +29,7 @@ public static class CachePreloaderTrigger
         var cachePreloaders = preloaders as ICachePreloader[] ?? preloaders.ToArray();
         if (cachePreloaders.Length is 0)
         {
-            logger?.ZLogInformation($"No cache preloaders found.");
+            logger?.LogInformation("No cache preloaders found.");
             return;
         }
 
@@ -39,12 +39,12 @@ public static class CachePreloaderTrigger
             {
                 await preloader.PreloadAsync().ConfigureAwait(false);
                 PreloadingState.PreloadingExecuted = true;
-                logger?.ZLogInformation($"Preloading completed for {preloader.GetType().Name}.");
+                logger?.LogInformation(ZString.Format("Cache preloading executed for {0}.", preloader.GetType().Name));
             }
             catch (Exception ex)
             {
                 PreloadingState.PreloadingExecuted = false;
-                logger?.ZLogError(ex, $"Error preloading cache for {preloader.GetType().Name}.");
+                logger?.LogError(ex, ZString.Format("Cache preloading failed for {0}.", preloader.GetType().Name));
             }
     }
 }

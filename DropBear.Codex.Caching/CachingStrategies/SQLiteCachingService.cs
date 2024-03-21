@@ -1,9 +1,8 @@
+using Cysharp.Text;
+using DropBear.Codex.AppLogger.Interfaces;
 using DropBear.Codex.Caching.Configuration;
 using DropBear.Codex.Caching.Interfaces;
 using EasyCaching.Core;
-using MethodTimer;
-using Microsoft.Extensions.Logging;
-using ZLogger;
 
 namespace DropBear.Codex.Caching.CachingStrategies;
 
@@ -14,7 +13,7 @@ public class SqLiteCachingService : ICacheService, IDisposable, IAsyncDisposable
 {
     private readonly IEasyCachingProvider _cache;
     private readonly CachingOptions _cacheOptions;
-    private readonly ILogger<SqLiteCachingService> _logger;
+    private readonly IAppLogger<SqLiteCachingService> _logger;
 
     /// <summary>
     ///     Initializes a new instance of the SQLiteCachingService class.
@@ -23,13 +22,24 @@ public class SqLiteCachingService : ICacheService, IDisposable, IAsyncDisposable
     /// <param name="cachingOptions">The caching configuration options.</param>
     /// <param name="logger">The logger for capturing logs within the service.</param>
     public SqLiteCachingService(IEasyCachingProviderFactory factory, CachingOptions cachingOptions,
-        ILogger<SqLiteCachingService>? logger)
+        IAppLogger<SqLiteCachingService>? logger)
     {
         _cacheOptions = cachingOptions ?? throw new ArgumentNullException(nameof(cachingOptions));
         _cache = factory.GetCachingProvider(_cacheOptions.SqLiteOptions.CacheName) ??
                  throw new ArgumentNullException(nameof(factory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _logger.ZLogInformation($"SQLiteCachingService initialized.");
+        _logger.LogInformation("SQLiteCachingService initialized.");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // Asynchronously dispose of any resources
+        await DisposeAsyncCore().ConfigureAwait(false);
+
+        // Dispose of any synchronous resources as well
+        Dispose(false); // Pass false to indicate asynchronous disposal
+
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -39,7 +49,6 @@ public class SqLiteCachingService : ICacheService, IDisposable, IAsyncDisposable
     /// <param name="key">The cache key.</param>
     /// <param name="fallbackFunction">An optional function to retrieve the item if it's not found in the cache.</param>
     /// <returns>The cached item if found; otherwise, the result of the fallback function, or default.</returns>
-    [Time]
     public async Task<T?> GetAsync<T>(string key, Func<Task<T?>>? fallbackFunction = null)
     {
         try
@@ -48,12 +57,13 @@ public class SqLiteCachingService : ICacheService, IDisposable, IAsyncDisposable
             if (result.HasValue) return result.Value;
 
             if (fallbackFunction is null) return default;
-            _logger.ZLogInformation($"Cache miss for key {key}. Attempting to retrieve from fallback function.");
+            _logger.LogInformation(
+                ZString.Format("Cache miss for key {key}. Attempting to retrieve from fallback function.", key));
             return await fallbackFunction().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            _logger.ZLogError(ex, $"Error retrieving cache item for key: {key}. Attempting fallback if available.");
+            _logger.LogError(ex, ZString.Format("Error retrieving cache item for key: {key}.", key));
             if (fallbackFunction is null) return default; // Return default if the fallback is not provided or fails.
             try
             {
@@ -61,7 +71,7 @@ public class SqLiteCachingService : ICacheService, IDisposable, IAsyncDisposable
             }
             catch (Exception fallbackEx)
             {
-                _logger.ZLogError(fallbackEx, $"Fallback function also failed for key: {key}.");
+                _logger.LogError(fallbackEx, ZString.Format("Error executing fallback function for key: {key}.", key));
             }
 
             return default; // Return default if the fallback is not provided or fails.
@@ -76,7 +86,6 @@ public class SqLiteCachingService : ICacheService, IDisposable, IAsyncDisposable
     /// <param name="key">The cache key.</param>
     /// <param name="value">The item to cache.</param>
     /// <param name="expiry">The expiration time.</param>
-    [Time]
     public async Task SetAsync<T>(string key, T value, TimeSpan? expiry = null)
     {
         try
@@ -86,7 +95,7 @@ public class SqLiteCachingService : ICacheService, IDisposable, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            _logger.ZLogError(ex, $"Error setting cache item for key: {key}");
+            _logger.LogError(ex, ZString.Format("Error setting cache item for key: {key}.", key));
         }
     }
 
@@ -94,7 +103,6 @@ public class SqLiteCachingService : ICacheService, IDisposable, IAsyncDisposable
     ///     Removes a cached item by its key.
     /// </summary>
     /// <param name="key">The cache key.</param>
-    [Time]
     public async Task RemoveAsync(string key)
     {
         try
@@ -103,14 +111,13 @@ public class SqLiteCachingService : ICacheService, IDisposable, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            _logger.ZLogError(ex, $"Error removing cache item for key: {key}");
+            _logger.LogError(ex, ZString.Format("Error removing cache item for key: {key}.", key));
         }
     }
 
     /// <summary>
     ///     Clears all items from the cache.
     /// </summary>
-    [Time]
     public async Task FlushAsync()
     {
         try
@@ -119,27 +126,17 @@ public class SqLiteCachingService : ICacheService, IDisposable, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            _logger.ZLogError(ex, $"Error flushing cache.");
+            _logger.LogError(ex, "Error flushing cache.");
         }
     }
+
     /// <summary>
     ///     Disposes the cache provider if it implements IDisposable.
     /// </summary>
     public void Dispose()
     {
         // Synchronously dispose of any resources
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        // Asynchronously dispose of any resources
-        await DisposeAsyncCore().ConfigureAwait(false);
-
-        // Dispose of any synchronous resources as well
-        Dispose(disposing: false); // Pass false to indicate asynchronous disposal
-
+        Dispose(true);
         GC.SuppressFinalize(this);
     }
 

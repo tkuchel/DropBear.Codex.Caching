@@ -1,10 +1,9 @@
-using System.Text.Json;
+using Cysharp.Text;
+using DropBear.Codex.AppLogger.Interfaces;
 using DropBear.Codex.Caching.Configuration;
 using DropBear.Codex.Caching.Interfaces;
-using MethodTimer;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.Extensions.Logging;
-using ZLogger;
+using ServiceStack.Text;
 
 namespace DropBear.Codex.Caching.CachingStrategies;
 
@@ -17,13 +16,7 @@ public class EncryptedCacheService : ICacheService
     private readonly ICacheService _baseCacheService;
     private readonly IDataProtector _dataProtector;
 
-    private readonly JsonSerializerOptions _jsonSerializerOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        // Add any necessary JsonSerializerOptions here
-    };
-
-    private readonly ILogger<EncryptedCacheService> _logger;
+    private readonly IAppLogger<EncryptedCacheService> _logger;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="EncryptedCacheService" /> class.
@@ -36,7 +29,7 @@ public class EncryptedCacheService : ICacheService
         ICacheService baseCacheService,
         IDataProtectionProvider dataProtectionProvider,
         CachingOptions options,
-        ILogger<EncryptedCacheService>? logger)
+        IAppLogger<EncryptedCacheService>? logger)
     {
         if (options is null || string.IsNullOrEmpty(options.EncryptionOptions.EncryptionApplicationName))
             throw new ArgumentException("Encryption options must specify an ApplicationName.", nameof(options));
@@ -44,7 +37,7 @@ public class EncryptedCacheService : ICacheService
         _baseCacheService = baseCacheService ?? throw new ArgumentNullException(nameof(baseCacheService));
         _dataProtector = dataProtectionProvider.CreateProtector(options.EncryptionOptions.EncryptionApplicationName);
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _logger.ZLogInformation($"EncryptedCacheService initialized.");
+        _logger.LogDebug("EncryptedCacheService initialized.");
     }
 
     /// <summary>
@@ -64,20 +57,20 @@ public class EncryptedCacheService : ICacheService
     ///     the cache.
     /// </remarks>
     /// <exception cref="Exception">Throws an exception if an error occurs during the encryption or serialization process.</exception>
-    [Time]
     public async Task SetAsync<T>(string key, T value, TimeSpan? expiry = null)
     {
         try
         {
-            var jsonData = JsonSerializer.Serialize(value, _jsonSerializerOptions);
+            var jsonData = JsonSerializer.SerializeToString(value);
             var encryptedData = _dataProtector.Protect(jsonData);
             await _baseCacheService.SetAsync(key, encryptedData, expiry).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            _logger.ZLogError(ex,
-                $"Error encrypting or serializing data for key '{key}'. Operation skipped for graceful degradation.");
-            // Consider whether to throw an exception or continue for graceful degradation.
+            _logger.LogError(ex,
+                ZString.Format(
+                    "Error encrypting or serializing data for key '{0}'. Operation skipped for graceful degradation.",
+                    key));
         }
     }
 
@@ -85,7 +78,6 @@ public class EncryptedCacheService : ICacheService
     ///     Removes a cached item by its key.
     /// </summary>
     /// <param name="key">The cache key of the item to remove.</param>
-    [Time]
     public async Task RemoveAsync(string key)
     {
         try
@@ -94,16 +86,15 @@ public class EncryptedCacheService : ICacheService
         }
         catch (Exception ex)
         {
-            _logger.ZLogError(ex,
-                $"Error removing cache item for key '{key}'. Operation skipped for graceful degradation.");
-            // Since this is a removal operation, simply log and degrade gracefully.
+            _logger.LogError(ex,
+                ZString.Format(
+                    "Error removing item with key '{0}' from cache. Operation skipped for graceful degradation.", key));
         }
     }
 
     /// <summary>
     ///     Clears all items from the cache.
     /// </summary>
-    [Time]
     public async Task FlushAsync()
     {
         try
@@ -112,8 +103,7 @@ public class EncryptedCacheService : ICacheService
         }
         catch (Exception ex)
         {
-            _logger.ZLogError(ex, $"Error flushing cache. Operation skipped for graceful degradation.");
-            // Flushing the cache is a broad operation; log the error and degrade gracefully.
+            _logger.LogError(ex, "Error flushing cache. Operation skipped for graceful degradation.");
         }
     }
 
@@ -132,7 +122,6 @@ public class EncryptedCacheService : ICacheService
     ///     The cached item if found, the result of the fallback function if provided and the item is not found, or the
     ///     default value for the type if the item is not found and no fallback function is provided or if an error occurs.
     /// </returns>
-    [Time]
     public async Task<T?> GetAsync<T>(string key, Func<Task<T?>>? fallbackFunction = null)
     {
         try
@@ -140,35 +129,33 @@ public class EncryptedCacheService : ICacheService
             var encryptedData = await _baseCacheService.GetAsync<string>(key).ConfigureAwait(false);
             if (string.IsNullOrEmpty(encryptedData))
             {
-                _logger.ZLogInformation($"Cache miss for key {key}.");
+                _logger.LogInformation(ZString.Format("Cache miss for key {key}.", key));
                 if (fallbackFunction is null) return default;
-                _logger.ZLogInformation($"Attempting to retrieve from fallback function for key {key}.");
+                _logger.LogInformation(ZString.Format("Retrieving from fallback function for key {key}.", key));
                 return await fallbackFunction().ConfigureAwait(false);
             }
 
             var decryptedData = _dataProtector.Unprotect(encryptedData);
-            return JsonSerializer.Deserialize<T>(decryptedData);
+            return JsonSerializer.DeserializeFromString<T>(decryptedData);
         }
         catch (Exception ex)
         {
-            _logger.ZLogError(ex, $"Error occurred during cache retrieval or processing for key: {key}.");
+            _logger.LogError(ex, ZString.Format("Error retrieving item with key '{0}' from cache.", key));
             // Attempt to use the fallback function to retrieve the data if provided
             if (fallbackFunction is null) return default;
             try
             {
-                _logger.ZLogInformation(
-                    $"Attempting to retrieve from fallback function for key {key} after an error.");
+                _logger.LogInformation(ZString.Format("Retrieving from fallback function for key {key}.", key));
                 return await fallbackFunction().ConfigureAwait(false);
             }
             catch (Exception fallbackEx)
             {
-                _logger.ZLogError(fallbackEx, $"Fallback function also failed for key: {key}.");
+                _logger.LogError(fallbackEx,
+                    ZString.Format("Error retrieving item with key '{0}' from fallback function.", key));
             }
 
             // Graceful degradation: return default value if fallback is not provided or fails
             return default;
         }
     }
-    
-    
 }

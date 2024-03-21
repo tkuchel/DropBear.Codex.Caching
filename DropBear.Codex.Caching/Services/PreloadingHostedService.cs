@@ -1,36 +1,34 @@
+using Cysharp.Text;
+using DropBear.Codex.AppLogger.Interfaces;
 using DropBear.Codex.Caching.Interfaces;
-using MethodTimer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using ZLogger;
 
 namespace DropBear.Codex.Caching.Services;
 
-public class PreloadingHostedService(IServiceProvider serviceProvider, ILogger<PreloadingHostedService> logger)
+public class PreloadingHostedService(IServiceProvider serviceProvider, IAppLogger<PreloadingHostedService> logger)
     : IHostedService
 {
-    [Time]
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        logger.ZLogInformation($"Cache preloading started.");
+        logger.LogInformation("Cache preloading started.");
         using var scope = serviceProvider.CreateScope();
         var preloaders = scope.ServiceProvider.GetServices<ICachePreloader>();
         foreach (var preloader in preloaders)
             try
             {
                 await preloader.PreloadAsync().ConfigureAwait(false);
-                logger.ZLogInformation($"Preloading completed for {preloader.GetType().Name}.");
+                logger.LogInformation(ZString.Format("Cache preloading for {0} completed.", preloader.GetType().Name));
             }
             catch (Exception ex)
             {
-                logger.ZLogError(ex, $"Error preloading cache for {preloader.GetType().Name}.");
+                logger.LogError(ex, ZString.Format("Cache preloading for {0} failed.", preloader.GetType().Name));
             }
     }
-    [Time]
+
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        logger.ZLogInformation($"Cache preloading service stopped.");
+        logger.LogInformation("Cache preloading service stopped.");
         return Task.CompletedTask;
     }
 }
