@@ -19,7 +19,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="DropBear.Codex.AppLogger" Version="2024.3.4" />
+      <PackageReference Include="DropBear.Codex.AppLogger" Version="2024.3.6" />
       <PackageReference Include="EasyCaching.Core" Version="1.9.2" />
       <PackageReference Include="EasyCaching.Extensions.EasyCompressor" Version="2.0.2" />
       <PackageReference Include="EasyCaching.FasterKv" Version="1.9.2" />
@@ -29,7 +29,7 @@
       <PackageReference Include="EasyCaching.Serialization.MessagePack" Version="1.9.2" />
       <PackageReference Include="EasyCaching.SQLite" Version="1.9.2" />
       <PackageReference Include="EasyCompressor.LZ4" Version="2.0.2" />
-        <PackageReference Include="MemoryPack" Version="1.20.3" />
+        <PackageReference Include="MemoryPack" Version="1.21.0" />
       <PackageReference Include="Meziantou.DotNet.CodingStandard" Version="1.0.119">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -38,6 +38,7 @@
       <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
       <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="8.0.0" />
       <PackageReference Include="ServiceStack.Text" Version="8.2.2" />
+      <PackageReference Include="ZString" Version="2.6.0" />
     </ItemGroup>
 
     <ItemGroup>
